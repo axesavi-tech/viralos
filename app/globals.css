@@ -1,0 +1,19 @@
+:root{--bg:#F7F4EF;--ink:#17131C;--mute:#6B6470;--line:#E5DED5;--acc:#FF4D2E;--plum:#2B1B3D;--panel:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Manrope,system-ui,sans-serif}
+a{color:inherit}h1,h2,h3{font-family:'Bodoni Moda',Didot,serif;line-height:1.08;margin:0}
+.logo{font:400 30px/1 Anton,Impact,sans-serif;letter-spacing:.06em;text-decoration:none}.logo i{color:var(--acc);font-style:normal}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 20px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--ink);font:700 15px Manrope,sans-serif;text-decoration:none;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.hero{background:var(--plum);color:#fff;border-radius:28px;padding:clamp(32px,6vw,80px);margin:8px 0 40px;position:relative;overflow:hidden}
+.hero h1{font-size:clamp(40px,6vw,76px);max-width:14ch;font-weight:800}.hero p{max-width:56ch;color:#DCD2EA;font-size:19px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}.card h3{font-size:22px;margin-bottom:6px}
+.price b{font:800 34px 'Bodoni Moda',serif}.muted{color:var(--mute)}.small{font-size:14px}
+footer{border-top:1px solid var(--line);margin-top:60px;padding:26px 0 40px;font-size:14px;color:var(--mute)}footer a{margin-right:16px}
+.auth{max-width:440px;margin:6vh auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:32px}
+.auth input{width:100%;font:16px Manrope,sans-serif;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin:6px 0 14px;background:var(--bg)}
+.auth label{font-weight:700;font-size:14px}.err{color:#B3261E;font-size:14px;min-height:20px}.ok{color:#11865A;font-size:14px}
+.legal{max-width:760px;margin:30px auto 80px}.legal h1{font-size:44px;margin:10px 0 20px}.legal h2{font-size:24px;margin:28px 0 8px}
+@media(max-width:600px){.nav .links a:not(.btn){display:none}}

@@ -1,0 +1,36 @@
+import assert from "node:assert/strict";
+import { createHmac } from "node:crypto";
+process.env.VX_ENCRYPTION_KEY = "a".repeat(64); process.env.VX_SERVER_SECRET = "s3cret"; process.env.RAZORPAY_KEY_SECRET = "rzsecret"; process.env.RAZORPAY_WEBHOOK_SECRET = "rzhook"; process.env.STRIPE_WEBHOOK_SECRET = "whsec_x";
+const { seal, open, signState, readState } = await import("../lib/crypto.ts");
+const { rzVerifyCheckout, rzVerifyWebhook, stripeVerify } = await import("../lib/payments.ts");
+const { safeFetch, extract } = await import("../lib/safefetch.ts");
+const { normShop } = await import("../lib/shopify.ts");
+const C = await import("../lib/commerce.ts");
+let n = 0; const t = async (name: string, fn: () => any) => { try { await fn(); n++; console.log("✓", name); } catch (e: any) { console.log("✗", name, e.message); process.exitCode = 1; } };
+await t("seal/open round-trips a token", () => { const s = seal('{"token":"EAAB"}'); assert.notEqual(s, '{"token":"EAAB"}'); assert.equal(open(s), '{"token":"EAAB"}'); });
+await t("tampered ciphertext is rejected", () => { const s = seal("hello"); const bad = s.slice(0, -4) + (s.endsWith("A") ? "BBBB" : "AAAA"); assert.throws(() => open(bad)); });
+await t("OAuth state verifies and rejects tampering", () => { const st = signState({ ws: "w1", u: "u1" }); assert.equal(readState(st).ws, "w1"); assert.throws(() => readState(st.replace(/.$/, (c) => (c === "a" ? "b" : "a")))); });
+await t("Razorpay checkout signature", () => { const sig = createHmac("sha256", "rzsecret").update("order_1|pay_1").digest("hex"); assert.ok(rzVerifyCheckout("order_1", "pay_1", sig)); assert.ok(!rzVerifyCheckout("order_1", "pay_2", sig)); });
+await t("Razorpay webhook signature", () => { const body = '{"event":"payment.captured"}'; const sig = createHmac("sha256", "rzhook").update(body).digest("hex"); assert.ok(rzVerifyWebhook(body, sig)); assert.ok(!rzVerifyWebhook(body + " ", sig)); });
+await t("Stripe webhook signature and replay window", () => { const ts = Math.floor(Date.now() / 1000), body = "{}"; const v1 = createHmac("sha256", "whsec_x").update(`${ts}.${body}`).digest("hex");
+  assert.ok(stripeVerify(body, `t=${ts},v1=${v1}`)); assert.ok(!stripeVerify(body, `t=${ts - 3600},v1=${createHmac("sha256", "whsec_x").update(`${ts - 3600}.${body}`).digest("hex")}`)); assert.ok(!stripeVerify("{ }", `t=${ts},v1=${v1}`)); });
+for (const u of ["http://127.0.0.1/", "http://localhost:3000/", "http://169.254.169.254/latest/meta-data", "http://10.0.0.5/", "ftp://example.com/"])
+  await t("SSRF guard blocks " + u, async () => { await assert.rejects(() => safeFetch(u)); });
+await t("page extraction", () => { const x = extract('<html><head><title>IRAAYA | Handloom</title><meta name="description" content="Sambalpuri ikat"></head><body><script>x()</script><h1>Woven slowly</h1><p>Each saree takes 21 days.</p><a href="/pages/about-us">About</a><a href="https://other.com/about">x</a><div style="color:#6B1A1A"></div></body></html>', "https://iraaya.com/");
+  assert.equal(x.title, "IRAAYA | Handloom"); assert.equal(x.desc, "Sambalpuri ikat"); assert.ok(x.text.includes("21 days")); assert.ok(!x.text.includes("x()")); assert.deepEqual(x.links, ["https://iraaya.com/pages/about-us"]); assert.deepEqual(x.colors, ["#6B1A1A"]); });
+await t("Shopify domain validation", () => { assert.equal(normShop("https://Iraaya.myshopify.com/admin"), "iraaya.myshopify.com"); assert.throws(() => normShop("iraaya.com")); });
+await t("store: Google Merchant XML feed", () => { const ps = C.parseFeed(`<?xml version="1.0"?><rss xmlns:g="http://base.google.com/ns/1.0"><channel><item><g:id>IR-01</g:id><g:title><![CDATA[Crimson ikat saree]]></g:title><g:description>Cotton &amp; silk double ikat</g:description><g:price>18500.00 INR</g:price><g:availability>in_stock</g:availability><g:image_link>https://cdn.x/1.jpg</g:image_link><g:product_type>Sarees &gt; Ikat</g:product_type></item><item><g:id>IR-02</g:id><g:title>Tussar dupatta</g:title><g:price>4200 INR</g:price><g:availability>out_of_stock</g:availability></item></channel></rss>`);
+  assert.equal(ps.length, 2); assert.equal(ps[0].name, "Crimson ikat saree"); assert.equal(ps[0].price, "18500.00"); assert.equal(ps[0].facts, "Cotton & silk double ikat"); assert.equal(ps[0].collection, "Sarees"); assert.equal(ps[1].status, "Out of stock"); });
+await t("store: Shopify/Woo style CSV with quotes", () => { const ps = C.parseFeed('Handle,Title,Body (HTML),Variant SKU,Variant Price,Image Src\nikat-1,"Saree, crimson","<p>Hand""woven""</p>",IR-01,18500,https://cdn.x/1.jpg\n', "export.csv");
+  assert.equal(ps.length, 1); assert.equal(ps[0].name, "Saree, crimson"); assert.equal(ps[0].sku, "IR-01"); assert.equal(ps[0].price, "18500"); assert.equal(ps[0].facts, 'Hand"woven"'); assert.equal(ps[0].image, "https://cdn.x/1.jpg"); });
+await t("store: JSON product list", () => { const ps = C.parseFeed('{"products":[{"id":7,"title":"Ikat stole","price":"2100","images":[{"src":"https://cdn.x/s.jpg"}]}]}'); assert.equal(ps[0].ref, "7"); assert.equal(ps[0].image, "https://cdn.x/s.jpg"); });
+await t("store: non-feed text rejected", () => { assert.throws(() => C.parseFeed("hello world")); });
+await t("store: WooCommerce address cleanup + https only", () => { assert.equal(C.normSite("yourstore.com/wp-admin/edit.php"), "https://yourstore.com"); assert.equal(C.normSite("https://x.com/shop/"), "https://x.com"); assert.equal(C.normSite("https://x.com/store"), "https://x.com/store"); assert.throws(() => C.normSite("http://x.com")); });
+await t("store: key formats checked before any network call", async () => {
+  await assert.rejects(() => C.ADAPTERS.woocommerce.connect({ site: "https://x.com", key: "abc", secret: "def" }), /consumer key/);
+  await assert.rejects(() => C.ADAPTERS.bigcommerce.connect({ hash: "a/b", token: "t" }), /store hash/);
+  await assert.rejects(() => C.ADAPTERS.wix.connect({ key: "short", site: "x" }), /API key/);
+  await assert.rejects(() => C.ADAPTERS.shopify.connect({ shop: "x.myshopify.com", token: "nope" }), /shpat_/);
+  await assert.rejects(() => C.ADAPTERS.feed.connect({ url: "http://127.0.0.1/feed.xml" })); });
+await t("store: update refuses malformed product ids", async () => { await assert.rejects(() => C.ADAPTERS.woocommerce.update!({ site: "https://x.com", key: "k", secret: "s" }, "1;drop", {}), /Unknown product/); await assert.rejects(() => C.ADAPTERS.bigcommerce.update!({ hash: "abc123", token: "t" }, "../2", {}), /Unknown product/); });
+console.log(`${n} passed`);
