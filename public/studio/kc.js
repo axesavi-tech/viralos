@@ -306,12 +306,12 @@ function swatches(m){if(!m)return['#2B2B2B','#8C8279','#C9A96E','#F7F2EB'];const
   const L=Object.values(B).sort((a,b)=>b.n-a.n).map(v=>rgb2hex(v.r/v.n,v.g/v.n,v.b/v.n)),out=[];for(const col of L){if(out.every(o=>{const a=hex2rgb(o),b=hex2rgb(col);return Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])>60}))out.push(col);if(out.length===4)break}
   while(out.length<4)out.push(mixHex(out[0]||'#888888',out.length%2?'#ffffff':'#000000',.35));out.sort((a,b)=>lumOf(a)-lumOf(b));SW.set(m,{src,c:out});return out}catch(e){return['#2B2B2B','#8C8279','#C9A96E','#F7F2EB']}}
 
-KC({id:'kc-review',name:'Love Note',fam:'Lifestyle',desc:'A five-star customer note slides up as a soft card over the product, stars fill one by one, then the call to action.',pal:{bg:'#FFF8F2',fg:'#2A2420',ac:'#E2A72E'},tone:'light',dur:9,pt:3.4,hold:[1.5,6],tags:['Lifestyle','Social proof'],
+KC({id:'kc-review',name:'Our Promise',fam:'Lifestyle',desc:'A soft note card slides up over the product carrying your brand’s promise, signed with your name, then the call to action.',pal:{bg:'#FFF8F2',fg:'#2A2420',ac:'#E2A72E'},tone:'light',dur:9,pt:3.4,hold:[1.5,6],tags:['Lifestyle','Social proof'],
  r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:kb(t,9,1.14,1.03)});scrimT(c,W,H,.75,.32);grad(c,W,H*.45,H*.55,'rgba(0,0,0,0)','rgba(0,0,0,.35)');
   const up=E.outExpo(P(t,.5,.9)),y0=900+(1-up)*900;c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=50;c.shadowOffsetY=20;c.fillStyle=p.bg;rr(c,70,y0,W-140,620,40);c.fill();c.restore();
-  for(let i=0;i<5;i++){const a=E.outBack(P(t,1.3+i*.15,.4));c.save();c.translate(150+i*70,y0+110);c.scale(a,a);c.beginPath();for(let k=0;k<10;k++){const ang=-Math.PI/2+k*Math.PI/5,rad=k%2?12:28;c.lineTo(Math.cos(ang)*rad,Math.sin(ang)*rad)}c.closePath();c.fillStyle=p.ac;c.fill();c.restore()}
-  T(c,'“'+(x.sub||'Exactly what I hoped for — and better in person.')+'”',130,y0+220,{font:IS,italic:1,size:54,color:p.fg,maxW:W-260,maxLines:4,p:P(t,2,.7),lh:1.15});
-  mono(c,'Verified customer',130,y0+560,{color:rgba(p.fg,.6),size:20,p:P(t,2.8,.6)});T(c,x.brand,W-130,y0+564,{font:IS,size:36,align:'right',color:p.fg,maxW:420,maxLines:1,p:P(t,2.8,.6)});
+  mono(c,'Our promise',130,y0+110,{color:p.ac,size:22,p:P(t,1.3,.5)});hair(c,130,y0+140,290,y0+140,p.ac,3,E.outExpo(P(t,1.4,.6)));
+  T(c,x.sub||x.headline||x.brand,130,y0+230,{font:IS,italic:1,size:54,color:p.fg,maxW:W-260,maxLines:4,p:P(t,2,.7),lh:1.15});
+  mono(c,x.handle,130,y0+560,{color:rgba(p.fg,.6),size:20,upper:0,p:P(t,2.8,.6)});T(c,x.brand,W-130,y0+564,{font:IS,size:36,align:'right',color:p.fg,maxW:420,maxLines:1,p:P(t,2.8,.6)});
   if(x.cta)pill(c,x.cta,W/2,1680,{bg:p.fg,fg:p.bg,s:E.outBack(P(t,3.6,.5)),alpha:P(t,3.6,.2),size:28});
   T(c,x.headline,W/2,310,{font:IS,size:80,align:'center',color:'#fff',maxW:W-180,maxLines:2,p:P(t,.2,.7),shadow:'rgba(0,0,0,.45)',sb:30})}});
 
@@ -446,16 +446,241 @@ KP({id:'kc-p-palette',name:'Colour Story',fam:'Lifestyle',desc:'The photo beside
   T(c,'Colour story',80,140,{font:IS,italic:1,size:64,color:p.fg});mono(c,x.brand,W-80,135,{align:'right',color:rgba(p.fg,.6),size:20,maxW:380});
   sw.forEach((col,i)=>{const y=200+i*254;c.fillStyle=col;c.fillRect(680,y,320,200);mono(c,col.toUpperCase(),680,y+232,{size:18,color:p.fg,ls:1});T(c,[x.f1,x.f2,x.f3,x.label][i]||'',1000,y+234,{font:IS,size:26,align:'right',color:rgba(p.fg,.7),maxW:180,maxLines:1})});
   T(c,x.headline,80,H-60,{font:IS,size:48,color:p.fg,maxW:W-160,maxLines:1})}});
-KP({id:'kc-p-review',name:'Love Note',fam:'Lifestyle',desc:'A five-star customer note as a soft card over the product photo.',pal:{bg:'#FFF8F2',fg:'#2A2420',ac:'#E2A72E'},tone:'light',tags:['Lifestyle','Social proof'],
+KP({id:'kc-p-review',name:'Our Promise',fam:'Lifestyle',desc:'Your brand’s promise as a soft note card over the product photo, signed with your name.',pal:{bg:'#FFF8F2',fg:'#2A2420',ac:'#E2A72E'},tone:'light',tags:['Lifestyle','Social proof'],
  r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.04});scrimT(c,W,H,.6,.3);const y0=640;c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=50;c.shadowOffsetY=20;c.fillStyle=p.bg;rr(c,70,y0,W-140,600,40);c.fill();c.restore();
-  for(let i=0;i<5;i++){c.save();c.translate(150+i*66,y0+100);c.beginPath();for(let k=0;k<10;k++){const ang=-Math.PI/2+k*Math.PI/5,rad=k%2?11:26;c.lineTo(Math.cos(ang)*rad,Math.sin(ang)*rad)}c.closePath();c.fillStyle=p.ac;c.fill();c.restore()}
-  T(c,'“'+(x.sub||'Exactly what I hoped for — and better in person.')+'”',130,y0+200,{font:IS,italic:1,size:52,color:p.fg,maxW:W-260,maxLines:4,lh:1.15});
-  mono(c,'Verified customer',130,y0+540,{color:rgba(p.fg,.6),size:18});T(c,x.brand,W-130,y0+544,{font:IS,size:34,align:'right',color:p.fg,maxW:420,maxLines:1});
+  mono(c,'Our promise',130,y0+100,{color:p.ac,size:22});hair(c,130,y0+130,290,y0+130,p.ac,3,1);
+  T(c,x.sub||x.headline||x.brand,130,y0+210,{font:IS,italic:1,size:52,color:p.fg,maxW:W-260,maxLines:4,lh:1.15});
+  mono(c,x.handle,130,y0+540,{color:rgba(p.fg,.6),size:18,upper:0});T(c,x.brand,W-130,y0+544,{font:IS,size:34,align:'right',color:p.fg,maxW:420,maxLines:1});
   T(c,x.headline,W/2,150,{font:IS,size:76,align:'center',color:'#fff',maxW:W-180,maxLines:2,shadow:'rgba(0,0,0,.45)',sb:30})}});
 KP({id:'kc-p-quiet',name:'Quiet Luxury',fam:'Lifestyle',desc:'Generous whitespace, a small photograph and one line of serif — the apothecary-calm post.',pal:{bg:'#F1EEE8',fg:'#2B2A27',ac:'#8C8279'},tone:'light',tags:['Lifestyle','Minimal'],
  r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,W/2-230,220,460,600);cover(c,S.m(0),W/2-230,220,460,600,{z:1.04});c.restore();
   mono(c,x.brand,W/2,140,{align:'center',color:p.fg,size:20,ls:10,maxW:W-200});T(c,x.headline,W/2,960,{font:IS,size:64,align:'center',color:p.fg,maxW:W-240,maxLines:2});
   T(c,x.sub,W/2,1110,{font:IT,size:26,align:'center',color:rgba(p.fg,.65),maxW:W-320,maxLines:2});mono(c,x.price||x.cta,W/2,H-100,{align:'center',color:p.ac,size:20,ls:6})}});
+
+/* =====================================================================
+   BATCH 3 · 25 REELS — the formats D2C brands post most
+   Families: Explain · Sell · Compare · Story · Social
+   ===================================================================== */
+const pts3=x=>{const f=feats(x);return f.length?f:['Thoughtfully made','Built to last','Limited release']};
+const bar=(c,x0,y,w,p,col,bg)=>{c.fillStyle=bg;c.fillRect(x0,y,w,6);c.fillStyle=col;c.fillRect(x0,y,w*clamp(p),6)};
+const tick=(c,cx,cy,r,p,col)=>{if(p<=0)return;c.save();c.strokeStyle=col;c.lineWidth=r*.22;c.lineCap='round';c.lineJoin='round';c.beginPath();const a=[cx-r*.45,cy],b=[cx-r*.1,cy+r*.35],d=[cx+r*.5,cy-r*.35];const q=clamp(p);
+  if(q<.4){const k=q/.4;c.moveTo(a[0],a[1]);c.lineTo(a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k)}else{const k=(q-.4)/.6;c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.lineTo(b[0]+(d[0]-b[0])*k,b[1]+(d[1]-b[1])*k)}c.stroke();c.restore()};
+const cross=(c,cx,cy,r,p,col)=>{if(p<=0)return;c.save();c.strokeStyle=col;c.lineWidth=r*.2;c.lineCap='round';const k=clamp(p);c.beginPath();c.moveTo(cx-r*.4,cy-r*.4);c.lineTo(cx-r*.4+r*.8*Math.min(1,k*2),cy-r*.4+r*.8*Math.min(1,k*2));if(k>.5){const k2=(k-.5)*2;c.moveTo(cx+r*.4,cy-r*.4);c.lineTo(cx+r*.4-r*.8*k2,cy-r*.4+r*.8*k2)}c.stroke();c.restore()};
+
+/* ================= FAMILY 6 · EXPLAIN ================= */
+KC({id:'kc-reasons',name:'3 Reasons',fam:'Explain',desc:'“3 reasons you’ll love it” — a giant numeral per reason, each with its own shot, then the product.',pal:{bg:'#111113',fg:'#F5F4EF',ac:'#B9FA70'},dur:11,pt:3.4,hold:[1.6,8],tags:['Explain','List'],
+ r(c,t,S){const{W,H,p,x}=S;const R=pts3(x).slice(0,3),seg=2.4,t0=1.6,k=Math.floor((t-t0)/seg),lt=t-t0-k*seg;c.fillStyle=p.bg;c.fillRect(0,0,W,H);
+  if(t<t0){T(c,R.length+' reasons',80,820,{font:IT,weight:700,size:150,ls:-5,color:p.fg,p:P(t,.1,.6)});T(c,'you’ll love '+(x.brand?'':'it'),80,960,{font:IS,italic:1,size:96,color:p.ac,p:P(t,.35,.6)});if(x.brand)T(c,x.brand,80,1080,{font:IS,italic:1,size:96,color:p.ac,maxW:900,maxLines:1,p:P(t,.5,.6)})}
+  else if(k<R.length){c.save();clip(c,0,0,W,1060);cover(c,S.m(k),0,0,W,1060,{z:1.12-.06*(lt/seg)});c.restore();c.fillStyle=p.bg;c.fillRect(0,1060,W,H-1060);
+    const s=1.3-.3*E.outExpo(clamp(lt/.5));c.save();c.translate(80,1060);c.scale(s,s);T(c,String(k+1).padStart(2,'0'),0,170,{font:IT,weight:200,size:240,color:p.ac,alpha:clamp(lt/.2)});c.restore();
+    kin(c,R[k],80,1420,{t:lt,t0:.2,font:IT,weight:700,size:76,ls:-2,maxW:920,maxLines:2,color:p.fg});bar(c,80,1600,W-160,(k+lt/seg)/R.length,p.ac,rgba(p.fg,.15))}
+  else{const lt2=t-t0-R.length*seg;cover(c,S.m(0),0,0,W,H,{z:kb(lt2,2,1.12,1.03)});scrimB(c,W,H,.85,.4);T(c,x.headline,80,1400,{font:IT,weight:700,size:90,ls:-3,color:'#fff',maxW:900,maxLines:2,anchor:'bottom',p:P(lt2,.2,.6)});if(x.cta)pill(c,x.cta,W/2,1560,{bg:p.ac,fg:ink(p.ac),s:E.outBack(P(lt2,.5,.5)),alpha:P(lt2,.5,.2),size:28})}}});
+
+KC({id:'kc-howto',name:'How To',fam:'Explain',desc:'A step-by-step tutorial: Step 01, 02, 03 with a progress rail, a close-up per step and the finished result.',pal:{bg:'#F4F2ED',fg:'#141414',ac:'#141414'},tone:'light',dur:12,pt:4.2,hold:[1.4,9],tags:['Explain','Tutorial'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const st=pts3(x).slice(0,3),seg=2.8,t0=1.4,k=Math.min(st.length,Math.floor(Math.max(0,t-t0)/seg)),lt=t-t0-k*seg;
+  mono(c,'How to',80,250,{color:p.fg,size:24,p:P(t,.1,.5)});T(c,x.headline,80,340,{font:IT,weight:700,size:62,ls:-1,color:p.fg,maxW:920,maxLines:2,p:P(t,.2,.6)});
+  st.forEach((s,i)=>{const x0=80+i*(W-160)/st.length,w=(W-160)/st.length-14,on=t>=t0+i*seg;c.fillStyle=on?p.fg:rgba(p.fg,.15);c.fillRect(x0,480,w,6);if(i===k&&k<st.length){c.fillStyle=p.fg;c.fillRect(x0,480,w*clamp(lt/seg),6)}})
+  if(t<t0){card(c,S.m(0),W/2,1050,820,820,{alpha:E.out(P(t,.2,.6)),z:1.03})}
+  else if(k<st.length){c.save();clip(c,80,560,W-160,860);cover(c,S.m(k),80,560,W-160,860,{z:1.6-.15*(lt/seg),fx:[.5,.35,.62][k],fy:[.35,.55,.75][k]});c.restore();
+    mono(c,`Step ${String(k+1).padStart(2,'0')}`,80,1500,{color:p.fg,size:24,p:clamp(lt/.3)});kin(c,st[k],80,1590,{t:lt,t0:.2,font:IT,weight:600,size:56,maxW:920,maxLines:2,color:p.fg})}
+  else{const l2=t-t0-st.length*seg;card(c,S.m(0),W/2,1000,820,860,{z:1.03,s:.95+.05*E.outExpo(clamp(l2/.6))});mono(c,'The result',80,1520,{color:p.fg,size:24});if(x.cta)T(c,x.cta+'  →',80,1610,{font:IT,weight:700,size:48,color:p.fg,p:P(l2,.3,.6),maxW:920,maxLines:1})}}});
+
+KC({id:'kc-checklist',name:'The Checklist',fam:'Explain',desc:'A clean checklist over the product: each point ticks itself off with a satisfying draw.',pal:{bg:'#0F1A14',fg:'#FFFFFF',ac:'#7CF2A6'},dur:9,pt:4.6,hold:[1.5,6],tags:['Explain','Checklist'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:kb(t,9,1.14,1.03)});c.fillStyle=rgba(p.bg,.55);c.fillRect(0,0,W,H);scrimB(c,W,H,.6,.5);
+  T(c,x.headline,80,420,{font:IT,weight:700,size:84,ls:-2,color:'#fff',maxW:920,maxLines:2,p:P(t,.2,.6)});mono(c,x.brand,80,300,{color:p.ac,size:22,p:P(t,.1,.5)});
+  const L=[...pts3(x),x.price?`Just ${x.price}`:null].filter(Boolean).slice(0,4);L.forEach((s,i)=>{const t0=1.2+i*.9,y=720+i*190;const a=E.outExpo(P(t,t0,.5));if(a<=0)return;
+    c.save();c.globalAlpha=a;rr(c,80,y-70,W-160,150,28);c.fillStyle='rgba(255,255,255,.1)';c.fill();c.strokeStyle='rgba(255,255,255,.22)';c.lineWidth=2;c.stroke();c.restore();
+    c.save();c.globalAlpha=a;c.beginPath();c.arc(160,y+5,38,0,7);c.fillStyle=P(t,t0+.35,.1)>0?p.ac:'rgba(255,255,255,.2)';c.fill();c.restore();tick(c,160,y+5,38,P(t,t0+.35,.4),ink(p.ac));
+    T(c,s,230,y+22,{font:IT,weight:600,size:46,color:'#fff',maxW:W-330,maxLines:1,alpha:a})});
+  if(x.cta)pill(c,x.cta,W/2,1620,{bg:p.ac,fg:ink(p.ac),s:E.outBack(P(t,1.6+L.length*.9,.5)),alpha:P(t,1.6+L.length*.9,.2),size:28})}});
+
+KC({id:'kc-qa',name:'Asked & Answered',fam:'Explain',desc:'Chat-style Q&A: a question bubble, typing dots, then answer bubbles pop in over a softened product shot.',pal:{bg:'#ECE9E4',fg:'#151515',ac:'#2F6BFF'},tone:'light',dur:10,pt:5.6,hold:[2,7],tags:['Explain','Chat'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.1,filter:'blur(18px) brightness(1.05) saturate(.9)'});c.fillStyle=rgba(p.bg,.55);c.fillRect(0,0,W,H);
+  const bub=(txt,right,y,a,col,fg)=>{if(a<=0)return 0;c.save();c.font=`500 44px ${IT}`;const lines=(()=>{const L=[];let l='';String(txt).split(' ').forEach(w=>{if(c.measureText(l+' '+w).width>620&&l){L.push(l);l=w}else l=l?l+' '+w:w});L.push(l);return L.slice(0,3)})();
+    const w=Math.max(...lines.map(l=>c.measureText(l).width))+70,h=lines.length*56+46,bx=right?W-80-w:80;const s=.85+.15*E.outBack(clamp(a));c.translate(bx+(right?w:0),y+h);c.scale(s,s);c.translate(-(bx+(right?w:0)),-(y+h));c.globalAlpha=clamp(a*2);
+    rr(c,bx,y,w,h,32);c.fillStyle=col;c.fill();lines.forEach((l,i)=>T(c,l,bx+35,y+62+i*56,{font:IT,weight:500,size:44,color:fg}));c.restore();return h+24};
+  mono(c,x.brand,W/2,250,{align:'center',color:p.fg,size:22,p:P(t,.1,.5)});let y=360;
+  y+=bub(x.headline?`Why ${x.headline.toLowerCase().replace(/[.!?]$/,'')}?`:'Why this one?',true,y,P(t,.4,.4),p.ac,'#fff');
+  const A=pts3(x);const typing=t>1.1&&t<1.9;if(typing){rr(c,80,y,150,80,30);c.fillStyle='#fff';c.fill();for(let i=0;i<3;i++){c.beginPath();c.arc(120+i*36,y+40,9,0,7);c.fillStyle=rgba(p.fg,.3+.5*Math.max(0,Math.sin(t*9-i)));c.fill()}}
+  A.forEach((a,i)=>{y+=bub(a,false,y,P(t,1.9+i*.8,.4),'#ffffff',p.fg)});
+  if(x.cta)y+=bub(x.cta+' →',true,y,P(t,1.9+A.length*.8+.4,.4),p.fg,'#fff')}});
+
+KC({id:'kc-didyouknow',name:'Did You Know',fam:'Explain',desc:'A curiosity hook — “Did you know?” — then a single fact set huge, with the product as proof.',pal:{bg:'#FFE45C',fg:'#111111',ac:'#111111'},tone:'light',dur:9,pt:3.6,hold:[1.2,6],tags:['Explain','Fact'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const rev=E.inOut(P(t,4.8,.9));
+  const q=1.4-.4*E.outBack(P(t,.1,.6));c.save();c.translate(W/2,520);c.scale(q,q);T(c,'Did you',0,0,{font:AN,size:190,align:'center',upper:1,color:p.fg,alpha:P(t,.1,.2)});T(c,'know?',0,190,{font:AN,size:190,align:'center',upper:1,color:p.fg,alpha:P(t,.25,.2)});c.restore();
+  kin(c,x.sub||x.headline,80,1000,{t,t0:1.2,font:IS,italic:1,size:78,maxW:920,maxLines:4,color:p.fg,lh:1.08});
+  if(rev>0){const yy=H*(1-rev);c.save();clip(c,0,yy,W,H-yy);cover(c,S.m(0),0,0,W,H,{z:kb(t-4.8,3,1.1,1.02)});scrimB(c,W,H,.8,.45);c.restore();
+    T(c,x.headline,80,1460,{font:IT,weight:700,size:84,ls:-2,color:'#fff',maxW:900,maxLines:2,anchor:'bottom',p:P(t,5.5,.6)});mono(c,[x.brand,x.cta].filter(Boolean).join('  ·  '),80,1560,{color:'#fff',size:22,p:P(t,5.9,.5),maxW:900})}}});
+
+/* ================= FAMILY 7 · SELL ================= */
+KC({id:'kc-sale',name:'Sale Countdown',fam:'Sell',desc:'A ticking “ends in” clock, the price landing with weight, flashes of the product, and the call to action.',pal:{bg:'#C8102E',fg:'#FFFFFF',ac:'#FFE45C'},dur:9,pt:4.4,hold:[2,6.5],tags:['Sell','Sale'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const k=Math.floor(t/1.4);c.save();clip(c,0,820,W,H-820);cover(c,S.m(k),0,820,W,H-820,{z:1.14-.06*((t%1.4)/1.4)});c.restore();
+  mono(c,x.label||'Sale',80,240,{color:ink(p.bg),size:24,p:P(t,.1,.5)});T(c,x.headline||'The sale is on',80,400,{font:AN,size:120,upper:1,color:ink(p.bg),maxW:920,maxLines:2,lh:.95,p:P(t,.2,.5)});
+  const rem=Math.max(0,86399-Math.floor(t*37)),hh=String(Math.floor(rem/3600)).padStart(2,'0'),mm=String(Math.floor(rem/60)%60).padStart(2,'0'),ss=String(rem%60).padStart(2,'0');
+  mono(c,'Ends in',80,640,{color:ink(p.bg),size:22,p:P(t,.6,.4)});[hh,mm,ss].forEach((v,i)=>{const bx=80+i*220;c.save();c.globalAlpha=E.out(P(t,.7+i*.1,.4));rr(c,bx,670,190,120,16);c.fillStyle=rgba('#000000',.25);c.fill();T(c,v,bx+95,758,{font:IT,weight:700,size:80,align:'center',color:ink(p.bg)});c.restore();if(i<2)T(c,':',bx+205,752,{font:IT,weight:700,size:70,align:'center',color:ink(p.bg),alpha:t%1<.5?1:.35})});
+  if(x.price){const s=E.outBack(P(t,2.2,.5));c.save();c.translate(W-230,1500);c.rotate(-.08);c.scale(s,s);c.beginPath();c.arc(0,0,170,0,7);c.fillStyle=p.ac;c.fill();T(c,'Now',0,-50,{font:PM,size:24,align:'center',upper:1,ls:4,color:ink(p.ac)});T(c,x.price,0,40,{font:AN,size:fit(c,x.price,AN,400,270,96),align:'center',color:ink(p.ac)});c.restore()}
+  if(x.cta)pill(c,x.cta,300,1700,{bg:'#fff',fg:'#111',s:E.outBack(P(t,2.8,.5)),alpha:P(t,2.8,.2),size:30})}});
+
+KC({id:'kc-restock',name:'Back in Stock',fam:'Sell',desc:'“Back in stock” stamps onto the product, a stock bar fills and the urgency line follows.',pal:{bg:'#111111',fg:'#FFFFFF',ac:'#B9FA70'},dur:8,pt:2.4,hold:[1.6,5.5],tags:['Sell','Restock'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:kb(t,8,1.15,1.03)});scrimB(c,W,H,.85,.4);scrimT(c,W,H,.65,.28);
+  const s=2.2-1.2*E.outBack(P(t,.4,.45));c.save();c.translate(W/2,700);c.rotate(-.1);c.scale(s,s);c.globalAlpha=P(t,.4,.1);rr(c,-380,-130,760,260,24);c.fillStyle=p.ac;c.fill();c.strokeStyle=ink(p.ac);c.lineWidth=6;rr(c,-362,-112,724,224,16);c.stroke();
+  T(c,'Back in',0,-12,{font:AN,size:110,upper:1,align:'center',color:ink(p.ac)});T(c,'stock',0,100,{font:AN,size:110,upper:1,align:'center',color:ink(p.ac)});c.restore();if(P(t,.4,.45)>=1&&t<1.1)flash(c,W,H,.15*(1-(t-.85)/.25));
+  T(c,x.headline,80,1330,{font:IT,weight:700,size:76,ls:-2,color:'#fff',maxW:920,maxLines:2,anchor:'bottom',p:P(t,1.2,.6)});
+  mono(c,'Selling fast',80,1420,{color:p.ac,size:22,p:P(t,1.6,.5)});bar(c,80,1450,W-160,.25+.55*E.outExpo(P(t,1.8,2)),p.ac,'rgba(255,255,255,.2)');
+  if(x.cta)pill(c,x.cta,W/2,1590,{bg:p.ac,fg:ink(p.ac),s:E.outBack(P(t,2.6,.5)),alpha:P(t,2.6,.2),size:28});brandMark(c,S,W/2,300,{size:42,color:'#fff'})}});
+
+KC({id:'kc-drop',name:'The Drop',fam:'Sell',desc:'A product drop: a lock and date tease, the lock clicks open and the piece is revealed with its time.',pal:{bg:'#0A0A0A',fg:'#FFFFFF',ac:'#FF5CA8'},dur:9,pt:5.4,hold:[1.5,6],tags:['Sell','Launch'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const un=E.inOut(P(t,2.6,.6)),rev=E.inOut(P(t,3.4,1));
+  if(rev<1){c.save();c.globalAlpha=1-rev;cover(c,S.m(0),0,0,W,H,{z:1.15,filter:'blur(30px) brightness(.5)'});
+    const cx=W/2,cy=820;c.strokeStyle=p.fg;c.lineWidth=18;c.beginPath();c.arc(cx,cy-80-un*60,90,Math.PI,0);c.lineTo(cx+90,cy-20-un*60);c.moveTo(cx-90,cy-80-un*60);c.lineTo(cx-90,cy-20);c.stroke();rr(c,cx-140,cy-30,280,230,30);c.fillStyle=p.fg;c.fill();c.beginPath();c.arc(cx,cy+60,22,0,7);c.fillStyle=p.bg;c.fill();
+    mono(c,'The drop',W/2,1180,{align:'center',size:26,color:p.ac,p:P(t,.3,.5)});T(c,x.label||'Coming soon',W/2,1270,{font:IT,weight:700,size:64,ls:-1,align:'center',color:p.fg,maxW:W-160,maxLines:1,p:P(t,.5,.5)});c.restore()}
+  if(rev>0){c.save();c.globalAlpha=rev;cover(c,S.m(0),0,0,W,H,{z:1.2-.15*rev});scrimB(c,W,H,.85,.42);c.restore();flash(c,W,H,.5*(1-clamp((t-3.4)/.4))*(t>3.4?1:0));
+    mono(c,'Unlocked',80,1250,{color:p.ac,size:24,p:P(t,4,.5)});kin(c,x.headline,80,1340,{t,t0:4.1,font:IT,weight:700,size:90,ls:-3,maxW:920,maxLines:2,color:'#fff'});if(x.cta)pill(c,x.cta,W/2,1620,{bg:p.ac,fg:ink(p.ac),s:E.outBack(P(t,4.8,.5)),alpha:P(t,4.8,.2),size:28})}}});
+
+KC({id:'kc-bundle',name:'The Bundle',fam:'Sell',desc:'Product + product + product = one price: cards slide together with plus signs into a bundle offer.',pal:{bg:'#F3EFE8',fg:'#1A1A1A',ac:'#E2552E'},tone:'light',dur:9,pt:4,hold:[1.5,6],tags:['Sell','Bundle'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const n=Math.max(2,Math.min(3,S.n)),merge=E.inOut(P(t,3.4,.9));
+  T(c,x.headline||'Better together',W/2,420,{font:IS,size:72,align:'center',color:p.fg,maxW:W-160,maxLines:2,anchor:'bottom',p:P(t,.1,.6)});
+  for(let i=0;i<n;i++){const a=E.outBack(P(t,.6+i*.6,.6)),y0=660+i*330,cx=W/2+(i%2?120:-120)*(1-merge),cy=y0+(860-y0)*merge*.0;const rot=(i%2?.05:-.05)*(1-merge);
+    c.save();c.translate(cx,y0+(1-a)*80);c.rotate(rot);c.globalAlpha=Math.min(1,a*2)*(1-merge*.0);c.shadowColor='rgba(0,0,0,.2)';c.shadowBlur=40;c.shadowOffsetY=16;c.fillStyle='#fff';c.fillRect(-250,-140,500,280);c.shadowColor='transparent';cover(c,S.m(i),-236,-126,300,252,{z:1.05});
+    T(c,pts3(x)[i]||'',80,10,{font:IT,weight:600,size:30,color:p.fg,maxW:150,maxLines:3,base:'middle',anchor:'middle'});c.restore();
+    if(i<n-1){const pa=E.outBack(P(t,.9+i*.6,.4));c.save();c.translate(W/2,y0+165);c.scale(pa,pa);T(c,'+',0,24,{font:IT,weight:300,size:90,align:'center',color:p.ac});c.restore()}}
+  if(merge>0){c.save();c.globalAlpha=merge;c.fillStyle=rgba(p.bg,.92);c.fillRect(0,0,W,H);c.restore();T(c,'=',W/2,760,{font:IT,weight:200,size:200,align:'center',color:p.ac,alpha:merge});
+    T(c,x.price||'One price',W/2,1000,{font:AN,size:fit(c,x.price||'One price',AN,400,W-200,220),align:'center',color:p.fg,alpha:merge});T(c,'for the set',W/2,1100,{font:IS,italic:1,size:60,align:'center',color:p.fg,alpha:merge});
+    if(x.cta)pill(c,x.cta,W/2,1300,{bg:p.fg,fg:p.bg,s:E.outBack(P(t,4.4,.5)),alpha:P(t,4.4,.2),size:30});mono(c,x.brand,W/2,1420,{align:'center',color:p.fg,size:22,alpha:merge})}}});
+
+KC({id:'kc-giftguide',name:'Gift Guide',fam:'Sell',desc:'A ribboned gift guide: three tagged picks, one after another, with the gifting line to close.',pal:{bg:'#7A1F2B',fg:'#FFF6EC',ac:'#E8C07A'},dur:10,pt:6.4,hold:[1.5,7],tags:['Sell','Gifting'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const P3=pts3(x),seg=1.8,t0=1.2,k=Math.min(2,Math.floor(Math.max(0,t-t0)/seg)),lt=t-t0-k*seg;
+  c.fillStyle=rgba(p.ac,.9);c.fillRect(W/2-14,380,28,1060);c.fillRect(0,600,W,28);
+  T(c,'The gift guide',W/2,240,{font:IS,italic:1,size:96,align:'center',color:p.fg,p:P(t,.1,.6)});mono(c,x.brand,W/2,300,{align:'center',color:p.ac,size:22,p:P(t,.3,.5)});
+  if(t>=t0){const a=E.outBack(clamp(lt/.6)),cx=W/2,cy=980;c.save();c.translate(cx,cy+(1-a)*120);c.rotate((k-1)*.04);c.globalAlpha=Math.min(1,a*2);c.shadowColor='rgba(0,0,0,.35)';c.shadowBlur=50;c.shadowOffsetY=20;c.fillStyle='#FFF6EC';c.fillRect(-330,-400,660,800);c.shadowColor='transparent';cover(c,S.m(k),-310,-380,620,640,{z:1.05});
+    T(c,P3[k],0,330,{font:IS,size:52,align:'center',color:'#2a1a1a',maxW:560,maxLines:1});c.restore();
+    c.save();c.translate(cx+300,cy-360);c.rotate(.25);c.fillStyle=p.ac;rr(c,-90,-36,180,72,10);c.fill();T(c,`No. ${k+1}`,0,12,{font:PM,size:24,align:'center',upper:1,ls:3,color:ink(p.ac)});c.restore()}
+  T(c,x.headline||'Wrapped and ready',W/2,1560,{font:IS,size:60,align:'center',color:p.fg,maxW:W-180,maxLines:1,p:P(t,6.6,.6)});if(x.cta)mono(c,x.cta,W/2,1640,{align:'center',color:p.ac,size:24,p:P(t,7,.5)})}});
+
+/* ================= FAMILY 8 · COMPARE ================= */
+KC({id:'kc-beforeafter',name:'Before / After',fam:'Compare',desc:'A swipe line wipes from a flat, muted “before” to the full-colour “after”, with labels that follow the line.',pal:{bg:'#111111',fg:'#FFFFFF',ac:'#B9FA70'},dur:9,pt:5,hold:[1.5,6.5],tags:['Compare','Transformation'],multi:2,
+ r(c,t,S){const{W,H,p,x}=S;const A=S.n>1?S.m(1):S.m(0),B=S.m(0),sw=E.inOut(P(t,1.4,1.4))-.18*Math.sin(Math.PI*P(t,3.2,1.2))*(t<4.4?1:0),X=W*clamp(sw);
+  cover(c,A,0,0,W,H,{z:1.06,filter:S.n>1?'none':'grayscale(.85) brightness(.85) contrast(.9)'});c.save();clip(c,0,0,X,H);cover(c,B,0,0,W,H,{z:1.06,filter:'contrast(1.08) saturate(1.15)'});c.restore();
+  if(X>2&&X<W-2){c.fillStyle='#fff';c.fillRect(X-3,0,6,H);c.beginPath();c.arc(X,H/2,46,0,7);c.fillStyle='#fff';c.fill();T(c,'‹ ›',X,H/2+14,{font:IT,weight:700,size:40,align:'center',color:'#111'})}
+  pill(c,'Before',W-170,330,{bg:'rgba(0,0,0,.55)',fg:'#fff',size:24,alpha:1-clamp(sw*1.4)});pill(c,'After',170,330,{bg:p.ac,fg:ink(p.ac),size:24,alpha:clamp(sw*2-.2)});
+  scrimB(c,W,H,.75,.55);T(c,x.headline,80,1470,{font:IT,weight:700,size:84,ls:-2,color:'#fff',maxW:900,maxLines:2,anchor:'bottom',p:P(t,4.6,.6)});mono(c,[x.brand,x.cta].filter(Boolean).join('  ·  '),80,1570,{color:p.ac,size:22,p:P(t,5,.5),maxW:900})}});
+
+KC({id:'kc-thisorthat',name:'This or That',fam:'Compare',desc:'Split screen, two picks, a live poll bar that tips — built to get comments.',pal:{bg:'#111113',fg:'#FFFFFF',ac:'#B9FA70'},dur:8,pt:4,hold:[1,5.5],tags:['Compare','Engagement'],multi:2,
+ r(c,t,S){const{W,H,p,x}=S;const half=H/2,sp=E.outExpo(P(t,.1,.7));c.save();clip(c,0,0,W,half);cover(c,S.m(0),(1-sp)*-W,0,W,half,{z:1.1});c.restore();c.save();clip(c,0,half,W,half);cover(c,S.m(1),(1-sp)*W,half,W,half,{z:1.1,fy:.45});c.restore();
+  grad(c,W,half-260,260,'rgba(0,0,0,0)','rgba(0,0,0,.6)');grad(c,W,H-300,300,'rgba(0,0,0,0)','rgba(0,0,0,.6)');
+  T(c,pts3(x)[0],80,half-60,{font:IT,weight:700,size:60,color:'#fff',maxW:700,maxLines:1,p:P(t,.6,.5)});T(c,pts3(x)[1],80,H-120,{font:IT,weight:700,size:60,color:'#fff',maxW:700,maxLines:1,p:P(t,.8,.5)});
+  const s=E.outBack(P(t,1,.5));c.save();c.translate(W/2,half);c.scale(s,s);c.beginPath();c.arc(0,0,92,0,7);c.fillStyle=p.ac;c.fill();T(c,'or',0,18,{font:IS,italic:1,size:70,align:'center',color:ink(p.ac)});c.restore();
+  const v=.5+.14*Math.sin(Math.min(t,5)*1.7)*E.out(P(t,1.6,.8)),ap=P(t,1.6,.4);if(ap>0){c.save();c.globalAlpha=ap;rr(c,W-330,half-140,250,280,26);c.fillStyle='rgba(0,0,0,.55)';c.fill();
+    [[v,'This'],[1-v,'That']].forEach(([q,l],i)=>{T(c,`${Math.round(q*100)}%`,W-205,half-60+i*140,{font:IT,weight:700,size:52,align:'center',color:'#fff'});mono(c,l,W-205,half-20+i*140,{align:'center',size:18,color:p.ac})});c.restore()}
+  mono(c,'Comment your pick',W/2,300,{align:'center',size:24,color:'#fff',p:P(t,2,.5)});mono(c,x.brand,W/2,250,{align:'center',size:20,color:'rgba(255,255,255,.7)'})}});
+
+KC({id:'kc-usvsusual',name:'Ours vs The Usual',fam:'Compare',desc:'Two columns: your brand versus “the usual”, ticks and crosses drawing row by row.',pal:{bg:'#F4F2ED',fg:'#141414',ac:'#1E8E5A'},tone:'light',dur:9,pt:5,hold:[1.5,6],tags:['Compare','Benefits'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,80,200,W-160,480);cover(c,S.m(0),80,200,W-160,480,{z:kb(t,9,1.12,1.03)});c.restore();
+  const cA=620,cB=880;T(c,x.brand,cA,800,{font:IT,weight:700,size:34,align:'center',color:p.fg,maxW:230,maxLines:2,p:P(t,.4,.5),base:'middle'});T(c,'The usual',cB,800,{font:IT,weight:500,size:34,align:'center',color:rgba(p.fg,.5),p:P(t,.5,.5),base:'middle'});
+  hair(c,80,850,W-80,850,rgba(p.fg,.25),2,E.outExpo(P(t,.6,.6)));
+  pts3(x).slice(0,4).forEach((f,i)=>{const y=960+i*175,t0=1.2+i*.9;T(c,f,80,y+16,{font:IT,weight:600,size:46,color:p.fg,maxW:440,maxLines:1,p:P(t,t0,.4)});
+    c.save();c.beginPath();c.arc(cA,y,40,0,7);c.fillStyle=rgba(p.ac,.15*P(t,t0,.3));c.fill();c.restore();tick(c,cA,y,40,P(t,t0+.25,.4),p.ac);cross(c,cB,y,40,P(t,t0+.45,.4),rgba(p.fg,.4));hair(c,80,y+75,W-80,y+75,rgba(p.fg,.1),2,1)});
+  if(x.cta)T(c,x.cta+'  →',80,1680,{font:IT,weight:700,size:50,color:p.fg,p:P(t,4.6,.6),maxW:920,maxLines:1})}});
+
+KC({id:'kc-pov',name:'POV',fam:'Compare',desc:'Native, text-on-screen POV format: the caption types in like a creator’s, over a handheld-feel shot.',pal:{bg:'#000000',fg:'#FFFFFF',ac:'#FFFFFF'},dur:8,pt:4,hold:[1,5.5],tags:['Compare','Native'],
+ r(c,t,S){const{W,H,p,x}=S;const k=Math.floor(t/2.6);cover(c,S.m(k),0,0,W,H,{z:1.12+.03*Math.sin(t*1.3),px:Math.sin(t*1.7)*10,py:Math.cos(t*1.3)*8});
+  const txt='POV: '+(x.headline?x.headline.charAt(0).toLowerCase()+x.headline.slice(1):'you found the one');const n=Math.floor(txt.length*clamp((t-.3)/1.6));
+  c.save();c.font=`600 58px ${IT}`;const L=[];let l='';txt.slice(0,n).split(' ').forEach(w=>{if(c.measureText(l+' '+w).width>W-260&&l){L.push(l);l=w}else l=l?l+' '+w:w});L.push(l);c.restore();
+  L.forEach((ln,i)=>{if(!ln)return;c.save();c.font=`600 58px ${IT}`;const w=c.measureText(ln).width+44;c.restore();rr(c,W/2-w/2,540+i*84-56,w,78,14);c.fillStyle='#fff';c.fill();T(c,ln,W/2,540+i*84,{font:IT,weight:600,size:58,align:'center',color:'#111'})});
+  if(t>3.2&&x.sub){const a=P(t,3.2,.4);c.save();c.globalAlpha=a;c.font=`600 44px ${IT}`;T(c,x.sub,W/2,1420,{font:IT,weight:600,size:44,align:'center',color:'#fff',maxW:W-200,maxLines:2,shadow:'rgba(0,0,0,.6)',sb:16});c.restore()}
+  mono(c,x.handle,W/2,1580,{align:'center',upper:0,size:24,color:'#fff',p:P(t,4,.5)})}});
+
+KC({id:'kc-pricereveal',name:'Guess the Price',fam:'Compare',desc:'“Guess the price” — digits spin like a slot machine and land on your price, with a confetti pop.',pal:{bg:'#1B1464',fg:'#FFFFFF',ac:'#FFD23F'},dur:8,pt:4.8,hold:[1.5,5.5],tags:['Compare','Engagement'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);card(c,S.m(0),W/2,660,820,760,{z:1.03,alpha:E.out(P(t,.1,.5))});
+  T(c,'Guess the price',W/2,1110,{font:IT,weight:800,size:82,ls:-2,align:'center',color:p.fg,p:P(t,.3,.5)});
+  const price=String(x.price||'₹ 999'),done=t>3.4;const chars=price.split('');c.save();c.font=`400 150px ${AN}`;const cw=chars.map(ch=>c.measureText(ch).width),tot=cw.reduce((a,b)=>a+b,0);c.restore();let px=W/2-tot/2;
+  chars.forEach((ch,i)=>{const lock=t>1.8+i*.25;const d=/\d/.test(ch)&&!lock?String(Math.floor((t*23+i*7)%10)):ch;T(c,d,px+cw[i]/2,1340,{font:AN,size:150,align:'center',color:lock?p.ac:'#fff',alpha:P(t,1.2,.3)});px+=cw[i]});
+  if(done){const e=clamp((t-3.4)/1.2);for(let i=0;i<40;i++){const a=i*2.4,r=200+e*700*(.4+(i%5)/6),cx=W/2+Math.cos(a)*r,cy=1300+Math.sin(a)*r*.7+e*e*400;c.fillStyle=[p.ac,'#fff','#FF5CA8','#7CF2D6'][i%4];c.globalAlpha=1-e;c.fillRect(cx,cy,14,26);c.globalAlpha=1}
+    if(x.cta)pill(c,x.cta,W/2,1560,{bg:p.ac,fg:ink(p.ac),s:E.outBack(P(t,3.8,.5)),alpha:P(t,3.8,.2),size:28})}
+  mono(c,x.brand,W/2,250,{align:'center',size:22,color:'rgba(255,255,255,.7)'})}});
+
+/* ================= FAMILY 9 · STORY ================= */
+KC({id:'kc-bts',name:'Behind the Scenes',fam:'Story',desc:'Camcorder-style BTS: REC dot, timecode, viewfinder corners and handheld moments from the studio.',pal:{bg:'#000000',fg:'#FFFFFF',ac:'#FF3B30'},dur:10,pt:3,hold:[1,7.5],grain:.08,tags:['Story','BTS'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;const k=Math.floor(t/2.2);cover(c,S.m(k),0,0,W,H,{z:1.18+.03*Math.sin(t*2),px:Math.sin(t*2.3)*14,py:Math.cos(t*1.7)*10,filter:'contrast(1.1) saturate(.85) sepia(.1)'});
+  if((t%2.2)<.12)flash(c,W,H,.35);vignette(c,W,H,.55);
+  c.strokeStyle='#fff';c.lineWidth=5;const m=70,L=70;[[m,m+150],[W-m,m+150],[m,H-m-150],[W-m,H-m-150]].forEach(([cx,cy],i)=>{const sx=i%2?-1:1,sy=i>1?-1:1;c.beginPath();c.moveTo(cx,cy+sy*L);c.lineTo(cx,cy);c.lineTo(cx+sx*L,cy);c.stroke()});
+  if(t%1<.6){c.beginPath();c.arc(m+50,m+200,16,0,7);c.fillStyle=p.ac;c.fill()}mono(c,'REC',m+80,m+209,{size:26,color:'#fff'});
+  const tc=`00:${String(Math.floor(t)).padStart(2,'0')}:${String(Math.floor((t%1)*24)).padStart(2,'0')}`;mono(c,tc,W-m-30,m+209,{align:'right',size:26,color:'#fff'});
+  mono(c,'Behind the scenes',W/2,H-m-250,{align:'center',size:24,color:'#fff',p:P(t,.4,.5)});T(c,pts3(x)[k%3]||x.headline,W/2,H-m-180,{font:IT,weight:600,size:56,align:'center',color:'#fff',maxW:W-220,maxLines:1,alpha:clamp(((t%2.2)-.2)/.3)});
+  mono(c,x.brand,W/2,m+300,{align:'center',size:20,color:'rgba(255,255,255,.75)'})}});
+
+KC({id:'kc-unbox',name:'Unboxing',fam:'Story',desc:'A branded box lid lifts away, tissue parts and the product rises out with a soft glow.',pal:{bg:'#EFE8DD',fg:'#2B2118',ac:'#1E2A3A'},tone:'light',dur:9,pt:4.2,hold:[1.5,6],tags:['Story','Unboxing'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const lid=E.inOut(P(t,1.2,1)),rise=E.outExpo(P(t,2.2,1.2)),bx=W/2-380,by=900,bw=760,bh=520;
+  c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=60;c.shadowOffsetY=30;c.fillStyle=p.ac;c.fillRect(bx,by,bw,bh);c.restore();
+  c.save();clip(c,0,0,W,by+40);const iw=600,ih=640;cover(c,S.m(0),W/2-iw/2,by+60-ih*rise,iw,ih,{z:1.04});c.restore();
+  c.fillStyle=mixHex(p.ac,'#000000',.2);c.fillRect(bx,by,bw,40);c.fillStyle=p.ac;c.fillRect(bx,by+40,bw,bh-40);T(c,x.brand,W/2,by+bh/2+40,{font:IS,size:60,align:'center',color:ink(p.ac),ls:6,upper:1,maxW:bw-120,maxLines:1});
+  if(lid<1){c.save();c.translate(W/2+lid*500,by-20-lid*600);c.rotate(lid*.5);c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=40;c.fillStyle=mixHex(p.ac,'#ffffff',.08);c.fillRect(-bw/2-20,-50,bw+40,90);c.restore()}
+  if(rise>.5){c.save();c.globalCompositeOperation='screen';const g=c.createRadialGradient(W/2,by-100,20,W/2,by-100,600);g.addColorStop(0,'rgba(255,240,210,.45)');g.addColorStop(1,'rgba(255,240,210,0)');c.fillStyle=g;c.fillRect(0,0,W,H);c.restore()}
+  mono(c,'Unboxing',W/2,240,{align:'center',size:24,color:p.fg,p:P(t,.2,.5)});T(c,x.headline,W/2,1560,{font:IS,size:66,align:'center',color:p.fg,maxW:W-180,maxLines:2,p:P(t,3.4,.6)});if(x.cta)mono(c,x.cta,W/2,1680,{align:'center',size:22,color:p.fg,p:P(t,3.8,.5)})}});
+
+KC({id:'kc-dayin',name:'A Day With',fam:'Story',desc:'Morning, afternoon, evening: a timeline of moments with the product through the day.',pal:{bg:'#F6EFE6',fg:'#2A2420',ac:'#E07A3F'},tone:'light',dur:10,pt:5,hold:[1.4,7.5],tags:['Story','Lifestyle'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const tm=['8:00','13:00','20:00'],seg=2.4,t0=1,k=Math.min(2,Math.floor(Math.max(0,t-t0)/seg)),lt=t-t0-k*seg;
+  T(c,'A day with',80,230,{font:IS,italic:1,size:64,color:p.fg,p:P(t,.1,.5)});T(c,x.brand,80,320,{font:IS,size:84,color:p.fg,maxW:920,maxLines:1,p:P(t,.25,.5)});
+  hair(c,120,420,120,1700,rgba(p.fg,.2),3,1);c.fillStyle=p.ac;c.fillRect(118,420,6,1280*clamp((t-t0)/(seg*3)));
+  for(let i=0;i<=k&&t>=t0;i++){const y=470+i*420,a=E.outExpo(clamp((t-t0-i*seg)/.6));c.save();c.globalAlpha=a;c.beginPath();c.arc(121,y+20,16,0,7);c.fillStyle=p.ac;c.fill();
+    mono(c,tm[i],170,y+30,{color:p.fg,size:24});c.save();clip(c,170+(1-a)*60,y+60,560,320);cover(c,S.m(i),170+(1-a)*60,y+60,560,320,{z:1.08});c.restore();T(c,pts3(x)[i],760,y+180,{font:IS,italic:1,size:44,color:p.fg,maxW:260,maxLines:3});c.restore()}
+  if(t>t0+seg*3-.2&&x.cta)mono(c,x.cta+'  →',170,1760,{color:p.ac,size:24,p:P(t,t0+seg*3,.5)})}});
+
+KC({id:'kc-founder',name:'Founder’s Note',fam:'Story',desc:'A personal letter: the note writes itself beside a photo, closing with a signature line.',pal:{bg:'#F7F3EC',fg:'#26221E',ac:'#26221E'},tone:'light',dur:11,pt:7,hold:[1.5,8],tags:['Story','Founder'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,80,200,W-160,700);cover(c,S.m(0),80,200,W-160,700,{z:kb(t,11,1.12,1.03),filter:'contrast(1.02) saturate(.9) sepia(.08)'});c.restore();
+  mono(c,'A note from us',80,980,{color:p.fg,size:22,p:P(t,.4,.5)});const body=[x.sub,x.headline].filter(Boolean).join(' ')||'Thank you for being here.';
+  c.save();c.font=`italic 400 56px ${IS}`;const L=[];let l='';body.split(' ').forEach(w=>{if(c.measureText(l+' '+w).width>W-160&&l){L.push(l);l=w}else l=l?l+' '+w:w});L.push(l);c.restore();
+  const tot=L.join('').length;let sh=Math.floor(tot*clamp((t-1)/4.5));L.slice(0,6).forEach((ln,i)=>{const s2=ln.slice(0,Math.max(0,sh));sh-=ln.length;T(c,s2,80,1090+i*72,{font:IS,italic:1,size:56,color:p.fg})});
+  const sy=1090+Math.min(6,L.length)*72+70;hair(c,80,sy,300,sy,p.fg,2,E.outExpo(P(t,5.8,.8)));T(c,'— '+(x.brand||''),80,sy+70,{font:IS,italic:1,size:52,color:p.fg,maxW:900,maxLines:1,p:P(t,6.2,.6)})}});
+
+KC({id:'kc-madeby',name:'How It’s Made',fam:'Story',desc:'From idea to you: a horizontal process line with numbered stages, close-ups and timestamps.',pal:{bg:'#1A1714',fg:'#F2EADF',ac:'#D9A86C'},dur:11,pt:6,hold:[1.5,8],tags:['Story','Process'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const st=[...pts3(x),'Made for you'].slice(0,4),seg=2.1,t0=1.2,k=Math.min(st.length-1,Math.floor(Math.max(0,t-t0)/seg)),lt=t-t0-k*seg;
+  T(c,'How it’s made',80,260,{font:IS,size:90,color:p.fg,p:P(t,.1,.6)});mono(c,x.brand,80,320,{color:p.ac,size:22,p:P(t,.3,.5)});
+  const y0=430,x0=110,x1=W-110;hair(c,x0,y0,x1,y0,rgba(p.fg,.2),3,1);c.fillStyle=p.ac;c.fillRect(x0,y0-2,(x1-x0)*clamp((t-t0)/(seg*st.length)),5);
+  st.forEach((s,i)=>{const cx=x0+(x1-x0)*(i/(st.length-1)),on=t>=t0+i*seg;c.beginPath();c.arc(cx,y0,on?18:12,0,7);c.fillStyle=on?p.ac:rgba(p.fg,.3);c.fill();mono(c,String(i+1).padStart(2,'0'),cx,y0+60,{align:'center',size:20,color:on?p.ac:rgba(p.fg,.4)})});
+  if(t>=t0){c.save();clip(c,80,560,W-160,900);cover(c,S.m(k),80,560,W-160,900,{z:1.5-.2*clamp(lt/seg),fx:[.5,.35,.62,.5][k],fy:[.3,.55,.75,.45][k],filter:'contrast(1.06) saturate(.92)'});c.restore();
+    mono(c,`Stage ${String(k+1).padStart(2,'0')}`,80,1540,{color:p.ac,size:22,p:clamp(lt/.3)});kin(c,st[k],80,1630,{t:lt,t0:.15,font:IS,size:70,maxW:920,maxLines:1,color:p.fg})}}});
+
+/* ================= FAMILY 10 · SOCIAL ================= */
+KC({id:'kc-giveaway',name:'Giveaway',fam:'Social',desc:'A giveaway announcement: the prize, then three entry steps that tick off, with the closing date.',pal:{bg:'#FF5CA8',fg:'#111111',ac:'#111111'},tone:'light',dur:10,pt:6,hold:[1.6,7],tags:['Social','Giveaway'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const g=1.3-.3*E.outBack(P(t,.1,.6));c.save();c.translate(W/2,330);c.scale(g,g);T(c,'Giveaway',0,0,{font:AN,size:180,upper:1,align:'center',base:'middle',color:ink(p.bg),alpha:P(t,.1,.2)});c.restore();
+  card(c,S.m(0),W/2,780,640,560,{z:1.03,alpha:E.out(P(t,.5,.5))});T(c,'Win: '+(x.headline||x.brand),W/2,1150,{font:IT,weight:700,size:52,align:'center',color:ink(p.bg),maxW:W-160,maxLines:2,p:P(t,1,.5)});
+  const steps=['Follow '+(x.handle||'us'),'Like this post','Tag a friend who needs it'];steps.forEach((s,i)=>{const t0=2.2+i*1,y=1320+i*120;const a=E.outExpo(P(t,t0,.5));if(a<=0)return;c.save();c.globalAlpha=a;rr(c,80,y-50,W-160,96,48);c.fillStyle='rgba(255,255,255,.85)';c.fill();c.restore();
+    c.save();c.globalAlpha=a;c.beginPath();c.arc(140,y-2,30,0,7);c.fillStyle='#111';c.fill();c.restore();tick(c,140,y-2,30,P(t,t0+.3,.4),'#fff');T(c,s,200,y+14,{font:IT,weight:600,size:40,color:'#111',maxW:W-320,maxLines:1,alpha:a})});
+  mono(c,x.label||'Winner announced soon',W/2,1720,{align:'center',color:ink(p.bg),size:22,p:P(t,5.6,.5)})}});
+
+KC({id:'kc-pick',name:'Pick a Number',fam:'Social',desc:'Three numbered picks shown one by one, then all together: “comment 1, 2 or 3”.',pal:{bg:'#0F0F10',fg:'#FFFFFF',ac:'#B9FA70'},dur:9,pt:6.6,hold:[1,6],tags:['Social','Engagement'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const seg=1.6,t0=.8,all=E.inOut(P(t,t0+seg*3,.8));
+  T(c,'Which one are you?',W/2,250,{font:IT,weight:700,size:64,ls:-1,align:'center',color:p.fg,p:P(t,.1,.5),maxW:W-160,maxLines:1});
+  for(let i=0;i<3;i++){const st=t0+i*seg,on=t>=st;if(!on)continue;const solo={x:80,y:360,w:W-160,h:1100},tile={x:80+i*((W-160+20)/3),y:520,w:(W-160-40)/3,h:620};
+    const L=(a,b)=>a+(b-a)*all;const cur=i===Math.min(2,Math.floor((t-t0)/seg));if(!cur&&all<=0)continue;const r={x:L(solo.x,tile.x),y:L(solo.y,tile.y),w:L(solo.w,tile.w),h:L(solo.h,tile.h)};
+    c.save();clip(c,r.x,r.y,r.w,r.h);cover(c,S.m(i),r.x,r.y,r.w,r.h,{z:1.08});c.restore();c.save();c.beginPath();c.arc(r.x+70*(1-all)+50*all,r.y+70*(1-all)+50*all,L(56,40),0,7);c.fillStyle=p.ac;c.fill();c.restore();
+    T(c,String(i+1),r.x+70*(1-all)+50*all,r.y+70*(1-all)+50*all+L(22,16),{font:IT,weight:800,size:L(60,44),align:'center',color:ink(p.ac)});
+    if(all<.5)T(c,pts3(x)[i],r.x+40,r.y+r.h-50,{font:IT,weight:700,size:58,color:'#fff',maxW:r.w-80,maxLines:1,shadow:'rgba(0,0,0,.6)',sb:20});else T(c,pts3(x)[i],r.x+r.w/2,r.y+r.h+60,{font:IT,weight:600,size:30,align:'center',color:'#fff',maxW:r.w,maxLines:2})}
+  if(all>0){T(c,'Comment 1, 2 or 3',W/2,1420,{font:IT,weight:800,size:76,ls:-2,align:'center',color:p.ac,alpha:all,maxW:W-160,maxLines:1});mono(c,x.brand,W/2,1520,{align:'center',size:22,color:'#fff',alpha:all})}}});
+
+KC({id:'kc-lineup',name:'The Lineup',fam:'Social',desc:'The range in a row: products glide past on a shelf line with names and prices, then settle.',pal:{bg:'#EDEAE4',fg:'#151515',ac:'#151515'},tone:'light',dur:9,pt:6,hold:[1,6],tags:['Social','Range'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const n=Math.max(3,Math.min(5,S.n||3)),cw=440,gap=50,pan=80+(1-E.inOut(P(t,.4,4.6)))*(W*.9);
+  T(c,'The lineup',80,260,{font:IS,size:96,color:p.fg,p:P(t,.1,.6)});mono(c,x.brand,80,320,{color:rgba(p.fg,.6),size:22,p:P(t,.3,.5)});
+  const sy=1250;c.fillStyle=mixHex(p.bg,'#000000',.08);c.fillRect(0,sy,W,14);
+  for(let i=0;i<n;i++){const cx=pan+i*(cw+gap)+cw/2;if(cx<-cw||cx>W+cw)continue;c.save();c.shadowColor='rgba(0,0,0,.2)';c.shadowBlur=40;c.shadowOffsetY=20;c.fillStyle='#fff';c.fillRect(cx-cw/2,sy-700,cw,700);c.restore();
+    cover(c,S.m(i),cx-cw/2+14,sy-686,cw-28,560,{z:1.04});T(c,[x.f1,x.f2,x.f3,x.label,x.headline][i]||x.brand,cx-cw/2+24,sy-60,{font:IS,size:40,color:p.fg,maxW:cw-60,maxLines:1});mono(c,i===0?x.price:'',cx-cw/2+24,sy-24,{color:rgba(p.fg,.6),size:20,upper:0})}
+  T(c,x.headline,80,1480,{font:IS,italic:1,size:64,color:p.fg,maxW:920,maxLines:2,p:P(t,5.6,.6)});if(x.cta)mono(c,x.cta+'  →',80,1640,{color:p.fg,size:24,p:P(t,6,.5)})}});
+
+KC({id:'kc-newin',name:'New In',fam:'Social',desc:'Swipe-style new arrivals: cards flick across with a NEW tag and swipe dots, like a carousel in motion.',pal:{bg:'#101010',fg:'#FFFFFF',ac:'#B9FA70'},dur:9,pt:2.4,hold:[1,6.5],tags:['Social','New arrivals'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const n=Math.max(3,Math.min(5,S.n||3)),seg=1.6,k=Math.min(n-1,Math.floor(t/seg)),lt=t-k*seg,sw=k<n-1?E.inOut(clamp((lt-1.15)/.45)):0;
+  T(c,'New in',80,280,{font:AN,size:150,upper:1,color:p.fg,p:P(t,.1,.5)});mono(c,x.brand,W-80,270,{align:'right',color:p.ac,size:22,maxW:500});
+  const draw=(i,dx,a)=>{if(i>=n)return;c.save();c.globalAlpha=a;c.translate(W/2+dx,980);c.rotate(dx/W*.12);c.shadowColor='rgba(0,0,0,.5)';c.shadowBlur=60;c.shadowOffsetY=30;rr(c,-380,-520,760,1040,30);c.fillStyle='#1c1c1c';c.fill();c.shadowColor='transparent';c.save();rr(c,-380,-520,760,1040,30);c.clip();cover(c,S.m(i),-380,-520,760,1040,{z:1.05});c.restore();
+    pill(c,'New',-260,-430,{bg:p.ac,fg:ink(p.ac),size:24});T(c,[x.f1,x.f2,x.f3,x.headline,x.label][i]||x.brand,-340,460,{font:IT,weight:700,size:48,color:'#fff',maxW:680,maxLines:1,shadow:'rgba(0,0,0,.6)',sb:18});c.restore()};
+  draw(k+1,0,sw*.0+(k<n-1?1:0)*Math.min(1,sw*3));draw(k,-sw*W*1.1,1);
+  for(let i=0;i<n;i++){c.beginPath();c.arc(W/2-(n-1)*18+i*36,1600,i===k?10:7,0,7);c.fillStyle=i===k?p.ac:'rgba(255,255,255,.35)';c.fill()}if(x.cta)mono(c,x.cta+'  →',W/2,1690,{align:'center',size:24,color:'#fff'})}});
+
+KC({id:'kc-festive',name:'Season’s Greetings',fam:'Social',desc:'Warm bokeh lights drift over the product as a greeting writes in — for any festival or season.',pal:{bg:'#1A0F0A',fg:'#FFF3DF',ac:'#F2B544'},dur:10,pt:5,hold:[1.5,7],grain:.05,tags:['Social','Festive'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:kb(t,10,1.14,1.03),filter:'brightness(.82) saturate(1.05)'});c.fillStyle=rgba(p.bg,.35);c.fillRect(0,0,W,H);
+  c.save();c.globalCompositeOperation='screen';for(let i=0;i<34;i++){const sx=(i*97%W),sy=((i*173)%H+t*(20+i%5*8))%H,r=18+(i%6)*10,a=.15+.25*Math.abs(Math.sin(t*.8+i));const g=c.createRadialGradient(sx,sy,0,sx,sy,r);g.addColorStop(0,rgba(p.ac,a));g.addColorStop(1,rgba(p.ac,0));c.fillStyle=g;c.fillRect(sx-r,sy-r,r*2,r*2)}c.restore();
+  scrimB(c,W,H,.75,.45);const greet=/greet|festive|season|diwali|eid|christmas|holiday|new year|onam|pongal|navratri|holi/i.test(x.label||'')?x.label:'Season’s greetings';
+  kin(c,greet,W/2,1260,{t,t0:.8,font:IS,italic:1,size:110,maxW:W-160,maxLines:2,color:p.fg,align:'center'});hair(c,W/2-120,1380,W/2+120,1380,p.ac,2,E.outExpo(P(t,2.4,.8)));
+  T(c,'from all of us at',W/2,1450,{font:IT,size:32,align:'center',color:rgba(p.fg,.8),p:P(t,2.8,.6)});T(c,x.brand,W/2,1530,{font:IS,size:64,align:'center',color:p.fg,maxW:W-200,maxLines:1,p:P(t,3.1,.6)})}});
 
 /* ---------- library integration: Kathavi Collection leads the library ---------- */
 const kc=TPL.filter(t=>t.kc);for(const t of kc)TPL.splice(TPL.indexOf(t),1);TPL.splice(0,0,...kc);
