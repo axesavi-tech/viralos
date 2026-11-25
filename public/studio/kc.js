@@ -955,6 +955,149 @@ KC({id:'kc-care',name:'Care Guide',fam:'Home',desc:'Clean care icons draw in one
   const tips=[x.f1?`${x.f1}`:'Handle gently',x.f2?`${x.f2}`:'Keep out of direct sun',x.f3?`${x.f3}`:'Store with care'];tips.forEach((s,i)=>{const t0=1+i*.8,y=920+i*230,a=E.out(P(t,t0,.5));if(a<=0)return;c.save();c.globalAlpha=a;c.beginPath();c.arc(150,y,70,0,7);c.fillStyle='#fff';c.fill();c.strokeStyle=p.ac;c.lineWidth=5;icons[i](150,y,a);c.restore();
     T(c,s,260,y+16,{font:IS,size:52,color:p.fg,maxW:740,maxLines:2,p:P(t,t0+.2,.5)})});if(x.cta)mono(c,x.cta,80,1720,{color:p.ac,size:22,p:P(t,3.6,.5)})}});
 
+
+/* =====================================================================
+   BATCH 6 · 25 POSTS — occasions & categories (static 1080×1350)
+   Celebrate · Lookbook · Taste · Glow · Home
+   ===================================================================== */
+const btn6=(c,text,cx,cy,bg,fg,o={})=>{if(!text)return;c.save();c.font=`600 ${o.size||26}px ${IT}`;if('letterSpacing' in c)c.letterSpacing='2px';const s=String(text).toUpperCase(),w=Math.min(o.maxW||760,c.measureText(s).width+(o.pad||90)),h=(o.size||26)*2.5;rr(c,cx-w/2,cy-h/2,w,h,h/2);c.fillStyle=bg;c.fill();c.restore();T(c,s,cx,cy+1,{font:IT,weight:600,size:o.size||26,align:'center',base:'middle',color:fg,ls:2,maxW:w-50,maxLines:1})};
+const frame6=(c,x,y,w,h,col,gap=14,lw=2)=>{c.save();c.strokeStyle=col;c.lineWidth=lw;c.strokeRect(x,y,w,h);c.strokeRect(x+gap,y+gap,w-gap*2,h-gap*2);c.restore()};
+const shadowCard6=(c,x,y,w,h,col='#fff',o={})=>{c.save();c.shadowColor=o.sh||'rgba(0,0,0,.2)';c.shadowBlur=o.blur||34;c.shadowOffsetY=o.oy||14;c.fillStyle=col;c.fillRect(x,y,w,h);c.restore()};
+const anniv6=x=>{const lb=String(x.label||''),yr=lb.match(/(?:since|est\.?|established)\s*(\d{4})/i),cnt=lb.match(/(\d+)\s*(?:years?|yrs)/i);return yr?{mode:'since',n:+yr[1]}:cnt?{mode:'years',n:+cnt[1]}:{mode:'thanks',n:0}};
+
+/* ================= CELEBRATE ================= */
+KP({id:'kc-p-festsale',name:'Festival Offer',fam:'Celebrate',desc:'A rangoli mandala rings your product, with the festival headline, price and brand set like an invitation.',pal:{bg:'#5B0F2E',fg:'#FFF1DC',ac:'#E8B04B'},grain:.04,tags:['Celebrate','Festive','Offer'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const g=c.createRadialGradient(W/2,520,40,W/2,520,700);g.addColorStop(0,rgba(p.ac,.18));g.addColorStop(1,rgba(p.ac,0));c.fillStyle=g;c.fillRect(0,0,W,H);
+  mandala(c,W/2,520,430,rgba(p.ac,.55),1,.2);c.save();c.beginPath();c.arc(W/2,520,250,0,7);c.clip();cover(c,S.m(0),W/2-250,270,500,500,{z:1.05});c.restore();c.beginPath();c.arc(W/2,520,258,0,7);c.strokeStyle=p.ac;c.lineWidth=4;c.stroke();
+  mono(c,x.label||'Festive edit',W/2,1010,{align:'center',color:p.ac,size:22,maxW:W-200});T(c,x.headline,W/2,1090,{font:IS,size:68,align:'center',color:p.fg,maxW:W-160,maxLines:2,lh:1.05});
+  if(x.price)btn6(c,'From '+x.price,W/2,1210,p.ac,ink(p.ac),{size:24});T(c,x.brand,W/2,1305,{font:IS,size:34,align:'center',color:rgba(p.fg,.8),maxW:W-200,maxLines:1})}});
+KP({id:'kc-p-wedding',name:'The Wedding Edit',fam:'Celebrate',desc:'An arched portrait in a gilded double frame, soft petals and a wedding-season title — invitation-card calm.',pal:{bg:'#F6EFE4',fg:'#3B2A22',ac:'#B08A4E'},tone:'light',tags:['Celebrate','Wedding'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);frame6(c,40,40,W-80,H-80,rgba(p.ac,.7),14,2);petals(c,W,H,3.2,rgba(p.ac,.35),18,4);
+  const aw=560,ah=760,ax=(W-aw)/2,ay=140;c.save();archPath(c,ax,ay,aw,ah);c.clip();cover(c,S.m(0),ax,ay,aw,ah,{z:1.04});c.restore();c.save();archPath(c,ax-14,ay-14,aw+28,ah+28);c.strokeStyle=p.ac;c.lineWidth=2;c.stroke();c.restore();
+  T(c,'The Wedding Edit',W/2,1010,{font:IS,italic:1,size:84,align:'center',color:p.fg,maxW:W-180,maxLines:1});hair(c,W/2-90,1050,W/2+90,1050,p.ac,2,1);
+  T(c,x.headline,W/2,1120,{font:IS,size:40,align:'center',color:rgba(p.fg,.85),maxW:W-240,maxLines:2});mono(c,[x.brand,x.cta].filter(Boolean).join('  ·  '),W/2,1240,{align:'center',color:p.ac,size:20,maxW:W-200})}});
+KP({id:'kc-p-anniversary',name:'Milestone',fam:'Celebrate',desc:'A brand milestone done properly: “Since 2019”, a years count or a simple thank-you, with a photo strip of the journey.',pal:{bg:'#111113',fg:'#F5F4EF',ac:'#B9FA70'},tags:['Celebrate','Anniversary'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const a=anniv6(x);
+  if(a.mode==='since'){T(c,'Since',W/2,200,{font:IS,italic:1,size:72,align:'center',color:p.ac});T(c,String(a.n),W/2,420,{font:IT,weight:200,size:fit(c,String(a.n),IT,200,W-200,330),align:'center',base:'middle',color:p.fg})}
+  else if(a.mode==='years'){T(c,String(a.n),W/2,340,{font:IT,weight:200,size:fit(c,String(a.n),IT,200,W-200,360),align:'center',base:'middle',color:p.fg});T(c,(a.n===1?'year':'years')+' of',W/2,560,{font:IS,italic:1,size:68,align:'center',color:p.ac})}
+  else T(c,'Thank you',W/2,380,{font:IS,italic:1,size:150,align:'center',base:'middle',color:p.fg});
+  T(c,x.brand,W/2,a.mode==='years'?650:600,{font:IS,size:52,align:'center',color:p.fg,maxW:W-160,maxLines:1});
+  const n=3,w=(W-160-40)/3;for(let i=0;i<n;i++){const x0=80+i*(w+20);B4tile(c,S.m(i),x0,760,w,380,{filter:i===1?'':'saturate(.85)'})}
+  T(c,a.mode==='thanks'?(x.headline||'Here’s to what’s next.'):'Thank you for being part of it.',W/2,1220,{font:IS,italic:1,size:44,align:'center',color:rgba(p.fg,.85),maxW:W-160,maxLines:1});mono(c,x.handle,W/2,1290,{align:'center',color:rgba(p.fg,.5),size:20,upper:0})}});
+KP({id:'kc-p-eos',name:'End of Season',fam:'Celebrate',desc:'Poster-loud end-of-season type stacked over the product with a clean price tag and final-call line.',pal:{bg:'#E9E4DA',fg:'#121212',ac:'#D2452B'},tone:'light',tags:['Celebrate','Sale'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);B4tile(c,S.m(0),W-560,0,560,H);
+  ['End','of','season'].forEach((w,i)=>T(c,w,60,260+i*230,{font:AN,size:260,upper:1,color:i===2?p.ac:p.fg,shadow:0}));
+  c.save();c.translate(170,1050);c.rotate(-.06);c.fillStyle=p.fg;c.fillRect(-110,-60,420,140);T(c,x.price?'From '+x.price:'Final edit',100,10,{font:IT,weight:700,size:42,align:'center',base:'middle',color:p.bg,maxW:380,maxLines:1});c.restore();
+  T(c,x.headline,60,1210,{font:IT,weight:600,size:38,color:p.fg,maxW:440,maxLines:2});mono(c,x.brand,60,1300,{color:rgba(p.fg,.6),size:18,maxW:440})}});
+KP({id:'kc-p-weekend',name:'The Weekend Edit',fam:'Celebrate',desc:'Friday, Saturday, Sunday — three framed picks in a row with a relaxed weekend headline.',pal:{bg:'#F3EDE4',fg:'#24201C',ac:'#C0613A'},tone:'light',tags:['Celebrate','Edit'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);mono(c,x.brand,70,110,{color:rgba(p.fg,.6),size:20,maxW:600});T(c,'The weekend edit',70,250,{font:IS,italic:1,size:104,color:p.fg,maxW:W-140,maxLines:1});
+  const days=['Fri','Sat','Sun'],w=(W-140-40)/3,f=pts3(x);days.forEach((d,i)=>{const x0=70+i*(w+20);shadowCard6(c,x0,360,w,640);B4tile(c,S.m(i),x0+12,372,w-24,500);T(c,d,x0+22,940,{font:IS,size:50,color:p.ac});mono(c,f[i]||'',x0+22,980,{color:rgba(p.fg,.65),size:16,maxW:w-40})});
+  T(c,x.headline,70,1140,{font:IS,size:56,color:p.fg,maxW:W-140,maxLines:2});if(x.cta)mono(c,x.cta+'  →',70,1290,{color:p.ac,size:22})}});
+
+/* ================= LOOKBOOK ================= */
+KP({id:'kc-p-lookbook',name:'Lookbook Cover',fam:'Lookbook',desc:'A quiet lookbook cover: full-bleed image, a thin title band and the season set in small caps.',pal:{bg:'#F4F1EB',fg:'#141414',ac:'#141414'},tone:'light',tags:['Lookbook','Cover'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);B4tile(c,S.m(0),60,60,W-120,1010);
+  T(c,'Lookbook',60,1180,{font:IS,size:110,color:p.fg});mono(c,x.label||'New season',W-60,1150,{align:'right',color:p.fg,size:20,maxW:420});mono(c,x.brand,W-60,1185,{align:'right',color:rgba(p.fg,.55),size:20,maxW:420});
+  hair(c,60,1230,W-60,1230,rgba(p.fg,.25),2,1);mono(c,'Looks 01 — 0'+Math.max(3,Math.min(9,S.n||4)),60,1285,{color:rgba(p.fg,.6),size:18});if(x.cta)mono(c,x.cta+'  →',W-60,1285,{align:'right',color:p.fg,size:18})}});
+KP({id:'kc-p-contact',name:'Contact Sheet',fam:'Lookbook',desc:'A film contact sheet: six numbered frames on black with one pick circled in grease pencil.',pal:{bg:'#0E0E0E',fg:'#EDEDED',ac:'#F04E37'},tags:['Lookbook','Film'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);mono(c,(x.brand||'')+'  ·  contact sheet',60,90,{color:rgba(p.fg,.6),size:18,maxW:W-120});
+  const cols=2,rows=3,gw=(W-120-30)/2,gh=300;for(let i=0;i<6;i++){const cx=60+(i%cols)*(gw+30),cy=130+Math.floor(i/cols)*(gh+70);c.fillStyle='#1b1b1b';c.fillRect(cx,cy,gw,gh);B4tile(c,S.m(i%Math.max(1,S.n||1)),cx+10,cy+10,gw-20,gh-20,{z:1.06+i*.04,fx:.3+(i%3)*.2,filter:'grayscale(.15)'});mono(c,String(i+1).padStart(2,'0')+'A',cx,cy+gh+30,{color:'#E3B341',size:16});
+   if(i===3){c.save();c.strokeStyle=p.ac;c.lineWidth=7;c.lineCap='round';c.beginPath();c.ellipse(cx+gw/2,cy+gh/2,gw/2+16,gh/2+20,-.04,.3,Math.PI*2+.15);c.stroke();c.restore()}}
+  T(c,x.headline,60,1290,{font:IS,italic:1,size:52,color:p.fg,maxW:W-120,maxLines:1})}});
+KP({id:'kc-p-material',name:'Material Card',fam:'Lookbook',desc:'A close-up of the material with colour chips pulled from your photo and its key details listed like a swatch card.',pal:{bg:'#F5F2EC',fg:'#1C1A17',ac:'#8C6A43'},tone:'light',tags:['Lookbook','Material'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);B4tile(c,S.m(0),70,70,W-140,620,{z:1.8,fx:.5,fy:.55});c.strokeStyle=rgba(p.fg,.15);c.lineWidth=2;c.strokeRect(70,70,W-140,620);
+  const sw=swatches(S.m(0)),cw=(W-140-3*20)/4;sw.slice(0,4).forEach((col,i)=>{const x0=70+i*(cw+20);c.fillStyle=col;c.fillRect(x0,730,cw,150);mono(c,col.toUpperCase(),x0,915,{color:rgba(p.fg,.6),size:16})});
+  T(c,'The material',70,1030,{font:IS,italic:1,size:78,color:p.fg});const f=pts3(x);f.forEach((s,i)=>{mono(c,'No. '+(i+1),70,1110+i*62,{color:p.ac,size:18});T(c,s,200,1112+i*62,{font:IS,size:38,color:p.fg,maxW:W-280,maxLines:1})});
+  mono(c,x.brand,W-70,1300,{align:'right',color:rgba(p.fg,.5),size:18,maxW:600})}});
+KP({id:'kc-p-chapter',name:'Chapter Opener',fam:'Lookbook',desc:'A collection told like a book: chapter numeral, collection title and a single inset image on a calm page.',pal:{bg:'#1D2321',fg:'#EFEBE3',ac:'#C7A46B'},tags:['Lookbook','Collection'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);mono(c,'Chapter',80,140,{color:p.ac,size:22});T(c,'II',80,400,{font:IS,size:300,color:p.fg});
+  B4tile(c,S.m(0),W-80-460,100,460,620);T(c,x.label||x.brand,80,860,{font:IS,italic:1,size:92,color:p.fg,maxW:W-160,maxLines:2,lh:1});hair(c,80,980,280,980,p.ac,2,1);
+  T(c,x.sub||x.headline,80,1060,{font:IS,size:40,color:rgba(p.fg,.8),maxW:W-200,maxLines:3,lh:1.25});foot(c,S,1220,p.fg)}});
+KP({id:'kc-p-lookgrid',name:'Four Looks',fam:'Lookbook',desc:'A tidy 2×2 lookbook grid with look numbers and one line per look.',pal:{bg:'#FAF8F4',fg:'#151515',ac:'#151515'},tone:'light',tags:['Lookbook','Grid'],multi:4,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const gw=(W-140-24)/2,gh=520,f=[...pts3(x),x.headline];
+  for(let i=0;i<4;i++){const x0=70+(i%2)*(gw+24),y0=70+Math.floor(i/2)*(gh+90);B4tile(c,S.m(i),x0,y0,gw,gh);mono(c,'Look '+String(i+1).padStart(2,'0'),x0,y0+gh+40,{color:p.fg,size:18});T(c,f[i]||'',x0+gw,y0+gh+42,{font:IS,italic:1,size:30,align:'right',color:rgba(p.fg,.7),maxW:gw-160,maxLines:1})}
+  hair(c,70,1270,W-70,1270,rgba(p.fg,.2),2,1);mono(c,x.brand,70,1310,{color:p.fg,size:18,maxW:600});mono(c,x.label||'',W-70,1310,{align:'right',color:rgba(p.fg,.55),size:18,maxW:420})}});
+
+/* ================= TASTE ================= */
+KP({id:'kc-p-menu',name:'Menu Card',fam:'Taste',desc:'A printed menu card: framed border, the dish shot, items with dotted leaders and the price.',pal:{bg:'#F5EFE3',fg:'#2B2118',ac:'#A23B24'},tone:'light',tags:['Taste','Menu'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);frame6(c,50,50,W-100,H-100,rgba(p.fg,.35),12,2);
+  T(c,x.brand,W/2,170,{font:IS,size:58,align:'center',color:p.fg,maxW:W-260,maxLines:1});mono(c,x.label||'Menu',W/2,215,{align:'center',color:p.ac,size:18,maxW:W-260});
+  B4tile(c,S.m(0),120,260,W-240,480);const items=[x.headline,...pts3(x)].filter(Boolean).slice(0,4);
+  items.forEach((it,i)=>{const y=830+i*96;T(c,it,120,y,{font:IS,size:44,color:p.fg,maxW:620,maxLines:1});c.font=`400 44px ${IS}`;const w=Math.min(620,c.measureText(it).width);dots(c,140+w,W-280,y-8,rgba(p.fg,.35));T(c,i===0&&x.price?x.price:'·',W-120,y,{font:IS,size:44,align:'right',color:p.ac})});
+  if(x.cta)mono(c,x.cta,W/2,1250,{align:'center',color:p.fg,size:20})}});
+KP({id:'kc-p-recipe',name:'Recipe Card',fam:'Taste',desc:'An index-card recipe: ruled lines, a taped photo and a “what you’ll need” list from your highlights.',pal:{bg:'#E8DFCF',fg:'#2A2420',ac:'#C0392B'},tone:'light',tags:['Taste','Recipe'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();c.translate(W/2,H/2+20);c.rotate(-.012);shadowCard6(c,-470,-560,940,1140,'#FFFDF8',{blur:40});
+  c.strokeStyle=rgba('#4A7BB7',.25);c.lineWidth=2;for(let y=-330;y<560;y+=62){c.beginPath();c.moveTo(-470,y);c.lineTo(470,y);c.stroke()}c.strokeStyle=rgba(p.ac,.45);c.beginPath();c.moveTo(-380,-560);c.lineTo(-380,580);c.stroke();
+  T(c,x.headline,-340,-430,{font:IS,italic:1,size:56,color:p.fg,maxW:420,maxLines:3,lh:1.05});c.save();c.translate(250,-330);c.rotate(.05);c.fillStyle='#fff';c.fillRect(-180,-200,360,400);B4tile(c,S.m(0),-166,-186,332,372);c.fillStyle='rgba(235,225,200,.8)';c.fillRect(-60,-218,120,36);c.restore();
+  mono(c,'What you’ll need',-340,-30,{color:p.ac,size:20});pts3(x).forEach((s,i)=>T(c,'—  '+s,-340,48+i*62,{font:IS,size:40,color:p.fg,maxW:760,maxLines:1}));
+  mono(c,x.brand,-340,330,{color:rgba(p.fg,.55),size:18,maxW:700});if(x.cta)T(c,x.cta,-340,440,{font:IS,italic:1,size:40,color:p.ac,maxW:760,maxLines:1});c.restore()}});
+KP({id:'kc-p-fresh',name:'Fresh & Hot',fam:'Taste',desc:'The dish full-bleed with curling steam, a loud “Fresh” and the order line — appetite first.',pal:{bg:'#1C120D',fg:'#FFF6EA',ac:'#F2A541'},grain:.05,tags:['Taste','Food'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.05,filter:'saturate(1.12) contrast(1.04)'});scrimT(c,W,H,.55,.3);scrimB(c,W,H,.85,.5);steam(c,W/2,620,2.3,'rgba(255,255,255,.9)');
+  T(c,'Fresh',70,240,{font:AN,size:210,upper:1,color:p.fg});mono(c,x.brand,72,300,{color:p.ac,size:22,maxW:800});
+  T(c,x.headline,70,1130,{font:IS,size:68,color:p.fg,maxW:W-140,maxLines:2,anchor:'bottom'});if(x.cta)btn6(c,x.cta,W-70-230,1250,p.ac,ink(p.ac),{size:22,maxW:460});if(x.price)T(c,x.price,70,1262,{font:IT,weight:600,size:44,color:p.fg,maxW:400,maxLines:1})}});
+KP({id:'kc-p-tasting',name:'Tasting Notes',fam:'Taste',desc:'A flavour wheel around the product with three tasting notes — for coffee, tea, chocolate, wine or spice.',pal:{bg:'#F1E9DE',fg:'#2A1E16',ac:'#8A4B2A'},tone:'light',tags:['Taste','Notes'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);T(c,'Tasting notes',W/2,150,{font:IS,italic:1,size:84,align:'center',color:p.fg});mono(c,x.brand,W/2,200,{align:'center',color:rgba(p.fg,.6),size:20,maxW:W-200});
+  const cx=W/2,cy=650,R=360,f=pts3(x),tones=[p.ac,mixHex(p.ac,'#D9A441',.6),mixHex(p.ac,'#6E7B4F',.6)];for(let i=0;i<3;i++){const a0=-Math.PI/2+i*2*Math.PI/3,a1=a0+2*Math.PI/3;c.beginPath();c.moveTo(cx,cy);c.arc(cx,cy,R,a0+.02,a1-.02);c.closePath();c.fillStyle=rgba(tones[i],.34);c.fill();
+   const am=(a0+a1)/2,tx=cx+Math.cos(am)*(R-80),ty=cy+Math.sin(am)*(R-80);T(c,f[i],tx,ty,{font:IS,italic:1,size:36,align:'center',base:'middle',color:p.fg,maxW:220,maxLines:2})}
+  c.save();c.beginPath();c.arc(cx,cy,170,0,7);c.clip();cover(c,S.m(0),cx-170,cy-170,340,340,{z:1.05});c.restore();c.beginPath();c.arc(cx,cy,176,0,7);c.strokeStyle=p.bg;c.lineWidth=10;c.stroke();
+  T(c,x.headline,W/2,1130,{font:IS,size:50,align:'center',color:p.fg,maxW:W-160,maxLines:2});mono(c,x.label||'',W/2,1270,{align:'center',color:p.ac,size:20,maxW:W-200})}});
+KP({id:'kc-p-order',name:'Order Now',fam:'Taste',desc:'A bold order card: the product on a dark plate, delivery line and one unmissable button.',pal:{bg:'#121417',fg:'#FFFFFF',ac:'#B9FA70'},tags:['Taste','Order'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();c.beginPath();c.arc(W/2,560,400,0,7);c.fillStyle=mixHex(p.bg,'#FFFFFF',.06);c.fill();c.clip();cover(c,S.m(0),W/2-400,160,800,800,{z:1.04});c.restore();
+  mono(c,x.brand,70,100,{color:rgba(p.fg,.65),size:20,maxW:600});mono(c,x.f3||'Order today',W-70,100,{align:'right',color:p.ac,size:20,maxW:400});
+  T(c,x.headline,W/2,1080,{font:IT,weight:700,size:58,align:'center',color:p.fg,maxW:W-140,maxLines:2,anchor:'bottom'});if(x.price)T(c,x.price,W/2,1150,{font:IT,weight:300,size:44,align:'center',color:rgba(p.fg,.8)});btn6(c,x.cta||'Order now',W/2,1250,p.ac,ink(p.ac),{size:26})}});
+
+/* ================= GLOW ================= */
+KP({id:'kc-p-ritual',name:'AM / PM Ritual',fam:'Glow',desc:'Morning and evening side by side: two moments of the product with the routine steps under each.',pal:{bg:'#F8EDE8',fg:'#3A2A27',ac:'#C9877A'},tone:'light',tags:['Glow','Routine'],multi:2,
+ r(c,t,S){const{W,H,p,x}=S;const hw=W/2;c.fillStyle=mixHex(p.bg,'#FFE9C7',.5);c.fillRect(0,0,hw,H);c.fillStyle='#2B2A44';c.fillRect(hw,0,hw,H);
+  [[0,'AM',p.fg,0],[hw,'PM','#EDE9F6',1]].forEach(([x0,lb,col,k])=>{mono(c,lb,x0+60,110,{color:k?'#B9B3E0':p.ac,size:24});B4tile(c,S.m(k),x0+60,150,hw-120,620);
+   pts3(x).forEach((s,i)=>{const y=880+i*100;c.beginPath();c.arc(x0+78,y-12,18,0,7);c.fillStyle=k?'#B9B3E0':p.ac;c.fill();T(c,String(i+1),x0+78,y-11,{font:IT,weight:700,size:20,align:'center',base:'middle',color:k?'#2B2A44':'#fff'});T(c,s,x0+112,y,{font:IS,size:34,color:col,maxW:hw-170,maxLines:1})})});
+  T(c,'The ritual',60,1240,{font:IS,italic:1,size:64,color:p.fg});mono(c,x.brand,W-60,1225,{align:'right',color:'#EDE9F6',size:18,maxW:460})}});
+KP({id:'kc-p-ingredients',name:'What’s Inside',fam:'Glow',desc:'The product at the centre with ingredient callouts on fine leader lines — clean, clinical, honest.',pal:{bg:'#F4F3EF',fg:'#1F2421',ac:'#5E7D6A'},tone:'light',tags:['Glow','Ingredients'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);T(c,'What’s inside',W/2,150,{font:IS,italic:1,size:84,align:'center',color:p.fg});
+  card(c,S.m(0),W/2,640,500,720,{z:1.03});const f=[...pts3(x),x.label].filter(Boolean).slice(0,4),pos=[[170,420],[910,500],[170,880],[910,960]],anc=[[400,460],[680,540],[400,840],[680,920]];
+  f.forEach((s,i)=>{const[px,py]=pos[i],[ax,ay]=anc[i];hair(c,px+(px<W/2?110:-110),py,ax,ay,rgba(p.fg,.4),2,1);c.beginPath();c.arc(ax,ay,7,0,7);c.fillStyle=p.ac;c.fill();c.beginPath();c.arc(px,py,108,0,7);c.fillStyle='#fff';c.fill();c.strokeStyle=rgba(p.fg,.2);c.lineWidth=2;c.stroke();T(c,s,px,py,{font:IS,size:28,align:'center',base:'middle',color:p.fg,maxW:180,maxLines:3,lh:1.1})});
+  T(c,x.headline,W/2,1150,{font:IS,size:48,align:'center',color:p.fg,maxW:W-160,maxLines:2});mono(c,x.brand,W/2,1280,{align:'center',color:p.ac,size:20,maxW:W-200})}});
+KP({id:'kc-p-glow',name:'The Glow',fam:'Glow',desc:'Full-bleed skin-light: a warm light leak over the photo and a soft italic headline.',pal:{bg:'#2A1A16',fg:'#FFF4EC',ac:'#F7C9A8'},grain:.04,tags:['Glow','Beauty'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.05,filter:'brightness(1.04) saturate(1.05)'});c.save();c.globalCompositeOperation='screen';const g=c.createRadialGradient(W*.85,H*.12,20,W*.85,H*.12,W*.9);g.addColorStop(0,'rgba(255,190,140,.55)');g.addColorStop(1,'rgba(255,190,140,0)');c.fillStyle=g;c.fillRect(0,0,W,H);c.restore();
+  scrimT(c,W,H,.45,.2);scrimB(c,W,H,.8,.5);mono(c,x.brand,70,100,{color:p.fg,size:20,maxW:700});T(c,x.headline||'Your glow, bottled',70,1180,{font:IS,italic:1,size:96,color:p.fg,maxW:W-140,maxLines:2,anchor:'bottom'});
+  mono(c,[x.f1,x.f2].filter(Boolean).join('  ·  '),70,1270,{color:p.ac,size:20,maxW:W-140})}});
+KP({id:'kc-p-shades',name:'Shade Range',fam:'Glow',desc:'The shade range as tidy swatch dots pulled from your photo, with one shade picked and named.',pal:{bg:'#F6F1EC',fg:'#2B211E',ac:'#B5715A'},tone:'light',tags:['Glow','Shades'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);B4tile(c,S.m(0),0,0,W,640);T(c,'Find your shade',70,770,{font:IS,italic:1,size:84,color:p.fg});
+  const sw=swatches(S.m(0)),pick=2;sw.slice(0,4).forEach((col,i)=>{const cx=150+i*260,cy=950,r=i===pick?96:82;c.beginPath();c.arc(cx,cy,r,0,7);c.fillStyle=col;c.fill();if(i===pick){c.beginPath();c.arc(cx,cy,r+12,0,7);c.strokeStyle=p.fg;c.lineWidth=3;c.stroke()}mono(c,col.toUpperCase(),cx,cy+140,{align:'center',color:rgba(p.fg,i===pick?.9:.5),size:16})});
+  T(c,x.headline,70,1200,{font:IS,size:46,color:p.fg,maxW:W-140,maxLines:1});mono(c,x.brand,70,1280,{color:p.ac,size:20,maxW:600})}});
+KP({id:'kc-p-texture',name:'Texture Study',fam:'Glow',desc:'A loupe magnifies the texture of your product — the detail shot, set on the full image.',pal:{bg:'#141312',fg:'#F6F2EC',ac:'#E7C9A5'},tags:['Glow','Detail'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.04,filter:'brightness(.75)'});const lx=W*.6,ly=560,R=300;
+  c.save();c.beginPath();c.arc(lx,ly,R,0,7);c.clip();cover(c,S.m(0),0,0,W,H,{z:2.6,fx:.6,fy:.42});c.restore();c.beginPath();c.arc(lx,ly,R,0,7);c.strokeStyle=p.fg;c.lineWidth=8;c.stroke();c.beginPath();c.arc(lx,ly,R+18,0,7);c.strokeStyle=rgba(p.fg,.35);c.lineWidth=2;c.stroke();
+  mono(c,'× 2.6',lx+R*.72,ly+R*.72+40,{color:p.ac,size:22});scrimB(c,W,H,.85,.55);mono(c,'Texture study',70,1060,{color:p.ac,size:22});T(c,x.headline,70,1150,{font:IS,italic:1,size:70,color:p.fg,maxW:W-140,maxLines:2});mono(c,x.brand,70,1290,{color:rgba(p.fg,.6),size:18,maxW:700})}});
+
+/* ================= HOME ================= */
+KP({id:'kc-p-room',name:'In the Room',fam:'Home',desc:'Your product framed on a softly lit wall above a console with a vase silhouette — styled as if in a real home.',pal:{bg:'#E9E2D7',fg:'#2A2520',ac:'#9C6B3C'},tone:'light',tags:['Home','Interior'],
+ r(c,t,S){const{W,H,p,x}=S;const g=c.createRadialGradient(W*.5,300,60,W*.5,400,1000);g.addColorStop(0,mixHex(p.bg,'#FFFFFF',.35));g.addColorStop(1,mixHex(p.bg,'#000000',.06));c.fillStyle=g;c.fillRect(0,0,W,H);
+  const fx=240,fy=150,fw=600,fh=640;shadowCard6(c,fx-26,fy-26,fw+52,fh+52,'#2A2520',{blur:40,oy:22});c.fillStyle='#FBF9F5';c.fillRect(fx-6,fy-6,fw+12,fh+12);B4tile(c,S.m(0),fx+30,fy+30,fw-60,fh-60);
+  const cy=960;c.fillStyle=mixHex(p.ac,'#000000',.15);c.fillRect(140,cy,W-280,26);c.fillRect(180,cy+26,16,140);c.fillRect(W-196,cy+26,16,140);c.fillStyle=mixHex(p.bg,'#000000',.08);c.fillRect(0,cy+166,W,H-cy-166);
+  c.fillStyle=mixHex(p.fg,p.bg,.2);c.beginPath();c.ellipse(260,cy-60,44,60,0,0,7);c.fill();c.fillRect(246,cy-130,28,30);c.strokeStyle=mixHex(p.fg,p.bg,.3);c.lineWidth=3;c.beginPath();c.moveTo(260,cy-130);c.quadraticCurveTo(230,cy-220,200,cy-260);c.moveTo(260,cy-130);c.quadraticCurveTo(300,cy-230,330,cy-250);c.stroke();
+  c.fillStyle=mixHex(p.ac,p.bg,.3);c.fillRect(W-380,cy-50,200,24);c.fillRect(W-360,cy-26,170,26);
+  T(c,x.headline,70,1240,{font:IS,italic:1,size:56,color:p.fg,maxW:W-140,maxLines:1});mono(c,x.brand,70,1300,{color:rgba(p.fg,.6),size:18,maxW:600});if(x.price)mono(c,x.price,W-70,1300,{align:'right',color:p.ac,size:18,upper:0})}});
+KP({id:'kc-p-3ways',name:'Styled 3 Ways',fam:'Home',desc:'Three tall panels — minimal, layered, statement — showing one piece styled three ways.',pal:{bg:'#EFEBE4',fg:'#1F1D1A',ac:'#7A5C3E'},tone:'light',tags:['Home','Styling'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);T(c,'Styled 3 ways',70,170,{font:IS,size:96,color:p.fg});mono(c,x.brand,70,225,{color:rgba(p.fg,.6),size:20,maxW:900});
+  const w=(W-140-40)/3,names=['Minimal','Layered','Statement'];names.forEach((nm,i)=>{const x0=70+i*(w+20);B4tile(c,S.m(i),x0,290,w,780,{z:1.06+i*.14,fx:.5,fy:.5-i*.04});mono(c,'0'+(i+1),x0,1115,{color:p.ac,size:20});T(c,nm,x0,1165,{font:IS,italic:1,size:42,color:p.fg,maxW:w,maxLines:1})});
+  hair(c,70,1220,W-70,1220,rgba(p.fg,.2),2,1);T(c,x.headline,70,1290,{font:IS,size:38,color:p.fg,maxW:W-140,maxLines:1})}});
+KP({id:'kc-p-moodboard',name:'Moodboard',fam:'Home',desc:'A pinned moodboard: tilted photos with tape, colour chips from your images and a handwritten-style note.',pal:{bg:'#E4DDD1',fg:'#2B2621',ac:'#B4553A'},tone:'light',grain:.05,tags:['Home','Moodboard'],multi:3,
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const ph=[[300,360,440,540,-.06],[770,330,380,460,.05],[640,800,420,360,-.03]];
+  ph.forEach(([cx,cy,w,h,r],i)=>{c.save();c.translate(cx,cy);c.rotate(r);shadowCard6(c,-w/2,-h/2,w,h,'#fff',{blur:24,oy:10});B4tile(c,S.m(i),-w/2+14,-h/2+14,w-28,h-28);c.fillStyle='rgba(240,232,210,.82)';c.fillRect(-55,-h/2-18,110,36);c.restore()});
+  const sw=swatches(S.m(0));sw.slice(0,4).forEach((col,i)=>{c.save();c.translate(130+i*0,700+i*110);c.rotate(-.04);c.fillStyle='#fff';c.fillRect(-60,-46,240,92);c.fillStyle=col;c.fillRect(-50,-36,72,72);mono(c,col.toUpperCase(),36,8,{color:rgba(p.fg,.65),size:15});c.restore()});
+  T(c,x.headline,80,1170,{font:IS,italic:1,size:60,color:p.fg,maxW:W-160,maxLines:2});mono(c,x.brand,80,1290,{color:p.ac,size:20,maxW:700})}});
+KP({id:'kc-p-cozy',name:'Cosy Season',fam:'Home',desc:'A warm window-lit scene: soft muntin shadows across the photo, falling flecks and a slow-living headline.',pal:{bg:'#24180F',fg:'#FFF2E2',ac:'#F0B36B'},grain:.05,tags:['Home','Seasonal'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.05,filter:'sepia(.15) saturate(1.05)'});c.fillStyle='rgba(60,30,10,.18)';c.fillRect(0,0,W,H);
+  c.save();c.globalCompositeOperation='screen';c.translate(W*.75,0);c.transform(1,0,-.35,1,0,0);[[-260,170],[-40,110]].forEach(([bx,bw])=>{const g=c.createLinearGradient(bx,0,bx+bw,0);g.addColorStop(0,'rgba(255,200,140,0)');g.addColorStop(.5,'rgba(255,200,140,.22)');g.addColorStop(1,'rgba(255,200,140,0)');c.fillStyle=g;c.fillRect(bx,0,bw,H)});c.restore();
+  for(let i=0;i<22;i++){const sx=(i*173)%W,sy=(i*311)%H;c.beginPath();c.arc(sx,sy,4+(i%4)*3,0,7);c.fillStyle='rgba(255,255,255,.22)';c.fill()}
+  scrimB(c,W,H,.8,.5);mono(c,x.label||'Cosy season',70,960,{color:p.ac,size:22,maxW:W-140});T(c,x.headline||'Stay in, slow down',70,1160,{font:IS,italic:1,size:84,color:p.fg,maxW:W-140,maxLines:2,anchor:'bottom'});mono(c,[x.brand,x.cta].filter(Boolean).join('  ·  '),70,1270,{color:rgba(p.fg,.75),size:20,maxW:W-140})}});
+KP({id:'kc-p-care',name:'Care Card',fam:'Home',desc:'A clean care card: product photo, three drawn care icons and simple instructions so it lasts.',pal:{bg:'#F2F4F1',fg:'#1F2622',ac:'#3D6B57'},tone:'light',tags:['Home','Care'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);B4tile(c,S.m(0),0,0,W,470);T(c,'Care guide',70,590,{font:IS,size:84,color:p.fg});mono(c,x.brand,70,640,{color:rgba(p.fg,.6),size:20,maxW:900});
+  c.strokeStyle=p.ac;c.lineWidth=5;c.lineCap='round';c.lineJoin='round';const ic=[(cx,cy)=>{c.beginPath();c.moveTo(cx,cy-40);c.bezierCurveTo(cx+36,cy,cx+30,cy+36,cx,cy+36);c.bezierCurveTo(cx-30,cy+36,cx-36,cy,cx,cy-40);c.stroke()},(cx,cy)=>{c.beginPath();c.arc(cx,cy,18,0,7);c.stroke();for(let k=0;k<8;k++){const a=k*Math.PI/4;c.beginPath();c.moveTo(cx+Math.cos(a)*28,cy+Math.sin(a)*28);c.lineTo(cx+Math.cos(a)*40,cy+Math.sin(a)*40);c.stroke()}c.beginPath();c.moveTo(cx-44,cy+44);c.lineTo(cx+44,cy-44);c.stroke()},(cx,cy)=>{c.beginPath();c.moveTo(cx-34,cy+30);c.lineTo(cx-34,cy-10);c.quadraticCurveTo(cx,cy-46,cx+34,cy-10);c.lineTo(cx+34,cy+30);c.closePath();c.stroke()}];
+  const tips=[x.f1||'Handle gently',x.f2||'Keep out of direct sun',x.f3||'Store with care'];tips.forEach((s,i)=>{const y=780+i*150;c.beginPath();c.arc(130,y,62,0,7);c.fillStyle=rgba(p.ac,.08);c.fill();c.strokeStyle=p.ac;ic[i](130,y);T(c,s,230,y+14,{font:IS,size:46,color:p.fg,maxW:W-300,maxLines:1})});
+  foot(c,S,1220,p.fg)}});
+
 /* ---------- library integration: Kathavi Collection leads the library ---------- */
 const kc=TPL.filter(t=>t.kc);for(const t of kc)TPL.splice(TPL.indexOf(t),1);TPL.splice(0,0,...kc);
 const fl=document.getElementById('filters');if(fl&&!fl.querySelector('[data-f=kc]')){const b=document.createElement('button');b.type='button';b.dataset.f='kc';b.setAttribute('aria-pressed','false');b.textContent='Kathavi Collection · '+kc.length;fl.prepend(b)}
