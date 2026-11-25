@@ -380,3 +380,74 @@ a.vx-btn[target=_blank]::after{content:'↗';margin-left:2px}
 .vx-drop-name{white-space:normal;overflow-wrap:anywhere}
 @container (max-width:440px){.vx-drop{flex-wrap:wrap}.vx-drop-cta{margin-left:94px}}
 @container (max-width:440px){.vx-drop{gap:14px 16px}.vx-drop-txt{flex:1 1 calc(100% - 96px)}.vx-drop-cta{margin-left:92px}}
+
+/* ==========================================================================
+   BRAND IDENTITY · Obsidian #111113 · Electric Lime #B9FA70 · Porcelain #F5F4EF · Titanium #85858B
+   Rules: Lime is a fill (with Obsidian on it), never text or a hairline on Porcelain.
+   Small grey text uses Titanium-deep #6B6B71 (4.8:1); Titanium itself is for lines, icons, large labels.
+   ========================================================================== */
+:root{--vx-bg:#F5F4EF;--vx-panel:#FFFFFF;--vx-ink:#111113;--vx-mute:#6B6B71;--vx-ti:#85858B;--vx-line:#E4E3DD;--vx-soft:#ECEBE5;
+  --vx-acc:#111113;--vx-acc-ink:#FFFFFF;--vx-lime:#B9FA70;--vx-lime-ink:#111113;--vx-sand:#B9FA70;--vx-sand-ink:#111113;--vx-plum:#111113}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--vx-bg:#111113;--vx-panel:#1A1A1D;--vx-ink:#F5F4EF;--vx-mute:#85858B;--vx-ti:#85858B;--vx-line:#2A2A2E;--vx-soft:#222226;--vx-acc:#B9FA70;--vx-acc-ink:#111113;--vx-sand-ink:#111113}}
+:root[data-theme=dark]{--vx-bg:#111113;--vx-panel:#1A1A1D;--vx-ink:#F5F4EF;--vx-mute:#85858B;--vx-ti:#85858B;--vx-line:#2A2A2E;--vx-soft:#222226;--vx-acc:#B9FA70;--vx-acc-ink:#111113;--vx-sand-ink:#111113}
+::selection{background:var(--vx-lime);color:var(--vx-lime-ink)}
+
+/* Logo: obsidian wordmark, lime full stop sits on a tiny obsidian square so it reads on light grounds */
+.vx-logo i::after{content:'';display:inline-block;width:.2em;height:.2em;margin-left:.06em;border-radius:50%;background:var(--vx-lime);box-shadow:0 0 0 .06em var(--vx-ink);vertical-align:.02em}
+
+/* Navigation: current studio is an obsidian pill with a lime marker */
+.vx-nav[aria-current=page]{background:var(--vx-ink);color:var(--vx-bg)}
+.vx-nav[aria-current=page] svg{color:var(--vx-lime);stroke:var(--vx-lime)}
+.vx-credit b{color:var(--vx-ink)}
+
+/* Primary actions: obsidian button, lime arrow disc. In dark mode the button itself turns lime */
+.vx-btn.pri{background:var(--vx-acc);border-color:var(--vx-acc);color:var(--vx-acc-ink)}
+.vx-btn.pri:hover{background:var(--vx-acc);box-shadow:0 0 0 3px var(--vx-lime)}
+.vx-btn.pri:not(.sm)::after{background:var(--vx-lime);color:var(--vx-lime-ink)}
+.vx-btn:hover{background:var(--vx-ink);color:var(--vx-bg)}
+.vx-btn:focus-visible,.vx-nav:focus-visible,.vx input:focus,.vx textarea:focus,.vx select:focus{outline:2px solid var(--vx-ink);outline-offset:2px;box-shadow:0 0 0 5px var(--vx-lime)}
+
+/* Highlights */
+.vx-chip.acc{background:var(--vx-lime);color:var(--vx-lime-ink)}
+.vx-chip.ok{background:color-mix(in srgb,var(--vx-lime) 55%,transparent);color:#1F3A0A}
+.vx-steps button[aria-current=step],.vx-tabs button[aria-selected=true]{background:var(--vx-ink);color:var(--vx-bg)}
+.vx-steps button[aria-current=step]::before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--vx-lime);margin-right:8px;vertical-align:1px}
+.vx-note{border-left-color:var(--vx-lime);border-left-width:3px}
+.vx-hero h1 em{background:linear-gradient(transparent 62%,var(--vx-lime) 62%,var(--vx-lime) 90%,transparent 90%);padding:0 .06em}
+.vx-meter i{background:var(--vx-ink)}
+.vx-dir[aria-pressed=true]{outline-color:var(--vx-ink);box-shadow:0 0 0 5px var(--vx-lime)}
+.vx-pill.Approved,.vx-pill.Scheduled,.vx-pill.Published{border-left-color:var(--vx-lime)}
+.vx-drop.over{box-shadow:0 0 0 4px var(--vx-lime)}
+.vx-drop-cta::after{content:'↑'}
+.vx-drop:hover .vx-drop-cta{background:var(--vx-ink);color:var(--vx-bg)}
+.vx-stat:first-child{background:var(--vx-ink);color:var(--vx-bg)}
+.vx-stat:first-child span{color:var(--vx-ti)}
+.vx-stat:first-child b{color:var(--vx-lime)}
+
+/* Creative Studio */
+#view-studio,#modal{--bg:#F5F4EF;--raise:#ECEBE5;--line:#E4E3DD;--ink:#111113;--muted:#6B6B71}
+#view-studio .logo b i{color:var(--vx-ink)}
+#view-studio .canvas-wrap{background-color:#ECEBE5;background-image:linear-gradient(#E0DFD8 1px,transparent 1px),linear-gradient(90deg,#E0DFD8 1px,transparent 1px)}
+#view-studio .chip.s{background:var(--vx-lime);color:var(--vx-lime-ink)}
+#view-studio .filters button[aria-pressed=true],#view-studio .seg button[aria-pressed=true],#view-studio .opt button[aria-pressed=true],#view-studio .lay[aria-pressed=true]{background:var(--vx-ink);color:#fff;box-shadow:inset 0 -2px 0 var(--vx-lime)}
+#view-studio .tabs button[aria-selected=true]{border-color:var(--vx-ink);box-shadow:inset 0 -3px 0 var(--vx-lime)}
+#view-studio .switch input:checked{background:var(--vx-ink)}
+#view-studio .switch input:checked::after{background:var(--vx-lime)}
+#view-studio .ai{background:var(--vx-ink);color:#F5F4EF;border-color:var(--vx-ink)}
+#view-studio .ai p{color:#B5B5BA}
+#view-studio .ai h3,#view-studio .ai small{color:var(--vx-lime)}
+#view-studio .ai .btn,#view-studio .ai button{background:var(--vx-lime);color:var(--vx-lime-ink);border-color:var(--vx-lime)}
+#view-studio .tpl:hover .th{outline:2px solid var(--vx-ink);box-shadow:0 0 0 5px var(--vx-lime)}
+#view-studio #exportBtn{box-shadow:inset 0 -3px 0 var(--vx-lime)}
+.vx-logo i::after{width:.17em;height:.17em;border-radius:.03em;box-shadow:none;border:1px solid var(--vx-ink);margin-left:.05em;vertical-align:0}
+.vx-hero h1{max-width:13ch}
+/* Dark-mode contrast: lime becomes the text/fill, obsidian sits on lime */
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]) .vx-hero h1 em{background:none;color:var(--vx-lime)}
+ :root:not([data-theme=light]) .vx-nav[aria-current=page]{background:var(--vx-lime);color:var(--vx-lime-ink)}
+ :root:not([data-theme=light]) .vx-nav[aria-current=page] svg{color:var(--vx-lime-ink);stroke:var(--vx-lime-ink)}
+ :root:not([data-theme=light]) .vx-btn.pri:not(.sm)::after{background:var(--vx-lime-ink);color:var(--vx-lime)}
+ :root:not([data-theme=light]) .vx-steps button[aria-current=step]::before{background:var(--vx-lime-ink)}}
+:root[data-theme=dark] .vx-hero h1 em{background:none;color:var(--vx-lime)}
+:root[data-theme=dark] .vx-nav[aria-current=page]{background:var(--vx-lime);color:var(--vx-lime-ink)}
+:root[data-theme=dark] .vx-nav[aria-current=page] svg{color:var(--vx-lime-ink);stroke:var(--vx-lime-ink)}
+:root[data-theme=dark] .vx-btn.pri:not(.sm)::after{background:var(--vx-lime-ink);color:var(--vx-lime)}

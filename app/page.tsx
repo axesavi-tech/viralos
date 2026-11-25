@@ -67,7 +67,7 @@ export default function Home() {
     </div></section>
 
     <div className="wrap">
-      <section className="cta-band"><h2>Brief it once. Publish all month.</h2><Link href="/login?mode=signup" className="btn arrow">Start free</Link></section>
+      <section className="cta-band"><h2>Brief it once. <em className="accent">Publish all month.</em></h2><Link href="/login?mode=signup" className="btn arrow">Start free</Link></section>
       <Footer />
     </div>
   </>);

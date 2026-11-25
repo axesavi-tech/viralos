@@ -122,3 +122,32 @@ footer p{margin:0}
 .legal{max-width:760px;margin:40px auto 80px}.legal h1{font-size:clamp(48px,7vw,84px);margin:16px 0 26px}.legal h2{font-size:32px;margin:36px 0 10px}
 .legal p,.legal li{color:#3C423F}
 @media(max-width:640px){.nav .links a:not(.btn){display:none}.nav{padding-left:16px}}
+
+/* BRAND IDENTITY · Obsidian #111113 · Electric Lime #B9FA70 · Porcelain #F5F4EF · Titanium #85858B
+   Lime is a fill with Obsidian on it, never text on Porcelain. Small grey text uses #6B6B71 for contrast. */
+:root{--bg:#F5F4EF;--soft:#ECEBE5;--panel:#FFFFFF;--ink:#111113;--mute:#6B6B71;--ti:#85858B;--line:#E4E3DD;--lime:#B9FA70;--sand:#B9FA70;--sand-ink:#111113}
+::selection{background:var(--lime);color:var(--ink)}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;box-shadow:0 0 0 5px var(--lime)}
+.logo i::after{content:'';display:inline-block;width:.2em;height:.2em;margin-left:.06em;border-radius:50%;background:var(--lime);box-shadow:0 0 0 .06em var(--ink);vertical-align:.02em}
+.btn.arrow::after{background:var(--lime);color:var(--ink)}
+.btn.pri:hover{background:var(--ink);box-shadow:0 0 0 3px var(--lime)}
+.hero h1 em{background:linear-gradient(transparent 64%,var(--lime) 64%,var(--lime) 90%,transparent 90%);padding:0 .05em}
+.stack span:nth-child(2){background:var(--lime)}
+.stack span:nth-child(3){background:var(--ink)}
+.fmt:nth-child(2){background:var(--lime)}
+.fmt:nth-child(4){background:var(--ink)}
+.fmt:nth-child(4) .eyebrow{color:var(--ti)}
+.row:hover .go{background:var(--lime);border-radius:999px}
+.row .go{display:inline-grid;place-items:center;width:40px;height:40px;justify-self:end;transition:background .15s}
+.card.feature{background:var(--ink);border-color:var(--ink)}
+.card.feature .tag{color:var(--ink);background:var(--lime);padding:2px 8px;border-radius:999px;align-self:flex-start}
+.card.feature b{color:var(--lime)}
+.card.feature .muted{color:#B5B5BA}
+.pov li::before{color:var(--mute)}
+.pov strong{background:linear-gradient(transparent 60%,var(--lime) 60%)}
+.cta-band{background:var(--ink)}
+.cta-band h2 em,.cta-band .accent{color:var(--lime)}
+.cta-band .btn{background:var(--lime);color:var(--ink);border-color:var(--lime)}
+.cta-band .btn.arrow::after{background:var(--ink);color:var(--lime)}
+.faq details[open] summary::after{color:var(--ink);background:var(--lime);border-radius:999px;width:28px;height:28px;display:inline-grid;place-items:center}
+.logo i::after{width:.17em;height:.17em;border-radius:.03em;box-shadow:none;border:1px solid var(--ink);margin-left:.05em;vertical-align:0}
