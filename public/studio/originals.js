@@ -1,5 +1,4 @@
-/* Kathavi Originals — 12 reel formats first made for a real D2C brand (Iraaya) and rebuilt as
-   brand-neutral templates: each customer's photos, words, logo and colours fill them. */
+/* Kathavi Originals — 12 brand-neutral reel formats: each customer's photos, words, logo and colours fill them. */
 (()=>{
 const{cover,card,kin,vignette,grad,sweep,flash,pill,brandMark,endCard,det,FA,sgBuf}=window.SGH;
 const OG=(o)=>R(Object.assign({orig:true,tone:'dark',grain:.045,fit:{full:1,portrait:1,clean:1},multi:1},o));
@@ -20,7 +19,7 @@ const gold=ac=>lumOf(ac)<.42||rgb2hsl(...hex2rgb(ac))[1]<.25?'#E2A72E':ac;
 
 /* 1 — Yes, I Am */
 OG({id:'og-yesiam',name:'Yes, I Am',desc:'Rapid “You are…” cuts on silky brand-colour textures, a flash to your hero shot answering “Yes, I am.”, a second round, then a tag-a-friend banner.',pal:{bg:'#5E1416',fg:'#FFF4EA',ac:'#F2C14E'},dur:14,pt:4.6,hold:[3.2,10],tags:['Originals','Text on beat'],
- r(c,t,S){const{W,H,p,x}=S;const A=['Always overdressed ✨','A compliment collector',x.f1||'Main character','Fashionably late ⏰','The main character 🎬'],B=[x.f2||'Extra. Always.','A weekend planner',x.f3||'Zero regrets','Wardrobe CEO 👑','Never “just casual”'];
+ r(c,t,S){const{W,H,p,x}=S;const A=['Always a little extra ✨','A compliment collector',x.f1||'Main character','Picky about the details 🔍','The main character 🎬'],B=[x.f2||'Extra. Always.','A weekend planner',x.f3||'Zero regrets','The one with taste 👑','Never settles for “fine”'];
   const quick=(lt,arr,seed)=>{const i=Math.min(arr.length-1,Math.floor(lt/.6)),st=lt-i*.6;silk(c,W,H,i%2?mixHex(p.bg,'#000000',.25):p.bg,t,seed+i);
     T(c,'You are…',W/2,560,{font:F.cor,italic:1,weight:600,size:72,align:'center',color:rgba(p.fg,.85)});const s=1.25-.25*E.outExpo(clamp(st/.18));c.save();c.translate(W/2,960);c.scale(s,s);
     T(c,arr[i],0,0,{font:F.cor,italic:1,weight:700,size:118,align:'center',base:'middle',color:p.fg,maxW:900,alpha:clamp(st/.08)});c.restore();brandMark(c,S,W/2,1640,{size:40,color:rgba(p.fg,.8)})};
@@ -45,7 +44,7 @@ OG({id:'og-exhibit',name:'The Exhibit',desc:'Your product hung in a dark gallery
     c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=60;c.fillStyle=p.ac;c.fillRect(-sx-34,-sy-34,fw+68,fh+68);c.shadowColor='transparent';c.fillStyle='#0d0b0a';c.fillRect(-sx-12,-sy-12,fw+24,fh+24);cover(c,m,-sx,-sy,fw,fh,{z:1.02});c.restore();
     T(c,String(x.brand||'').toUpperCase()?`${String(x.brand).toUpperCase()} PRESENTS`:'NOW SHOWING',W/2,300,{size:30,ls:12,align:'center',color:p.fg,weight:600,alpha:P(t,1.2,.6)*(1-P(t,4.8,.3))});
     const pl=E.outExpo(P(t,2.7,.7))*(1-P(t,4.8,.3));if(pl>0){c.save();c.translate((1-pl)*500,0);rr(c,W-470,1330,400,300,8);c.fillStyle='#F4EFE6';c.fill();
-      T(c,String(x.headline||'Untitled').toUpperCase(),W-440,1395,{size:30,weight:800,color:'#1b1715',maxW:340,ls:1});[['Medium',x.f1||'Mixed, mostly confidence'],['Year',x.label||'Whenever it wants'],['Edition',x.f3||'Extremely limited']].forEach(([k,v],i)=>
+      T(c,String(x.headline||'Untitled').toUpperCase(),W-440,1395,{size:30,weight:800,color:'#1b1715',maxW:340,ls:1});[['Medium',x.f1||'Pure confidence'],['Year',x.label||'Whenever it wants'],['Edition',x.f3||'Extremely limited']].forEach(([k,v],i)=>
         T(c,`${k}: ${v}`,W-440,1455+i*46,{size:24,italic:1,color:'#4a423c',maxW:345}));c.restore()}
     const guide=(st,num,title,line)=>{const a=E.out(P(t,st,.4))*(1-P(t,st+2,.3));if(a<=0)return;c.save();c.globalAlpha=a;rr(c,70,1350,W-140,260,20);c.fillStyle='rgba(12,10,9,.86)';c.fill();
       T(c,'🎧  AUDIO GUIDE · '+num,110,1415,{size:24,ls:4,color:p.ac,weight:700});T(c,title,110,1480,{font:F.cor,italic:1,weight:700,size:54,color:'#fff',maxW:860});T(c,line,110,1545,{size:30,color:'rgba(255,255,255,.8)',maxW:860});c.restore()};
@@ -87,7 +86,7 @@ OG({id:'og-bornto',name:'Born to… Forced to…',desc:'Split screen: your photo
     T(c,`${i+1}/3`,W-70,90,{size:26,weight:700,align:'right',color:'#8a817a'});c.restore();brandMark(c,S,W/2,1830,{size:34,color:'#6b625c'})}
   else{const lt=t-12;cover(c,S.m(0),0,0,W,H,{z:kb(lt,2,1.15,1.05)});grad(c,W,H*.4,H*.6,'rgba(0,0,0,0)','rgba(0,0,0,.72)');flash(c,W,H,1-clamp(lt/.2));
     const s=2-E.outBack(P(lt,.15,.35));c.save();c.translate(W/2,820);c.rotate(-.12);c.scale(s,s);c.globalAlpha=P(lt,.15,.1);c.strokeStyle=p.ac;c.lineWidth=12;rr(c,-330,-110,660,220,18);c.stroke();T(c,'PLOT TWIST',0,32,{font:FA,size:120,ls:6,align:'center',color:p.ac});c.restore();
-    kin(c,'Wear it anyway.',W/2,1260,{t:lt,t0:.5,font:F.cor,italic:1,weight:700,size:120,maxW:940,align:'center',color:'#fff',maxLines:2});pill(c,x.cta,W/2,1520,{bg:p.ac,fg:'#fff',s:E.outBack(P(lt,1,.4)),alpha:P(lt,1,.2),size:36});brandMark(c,S,W/2,300,{size:50,color:'#fff'})}}});
+    kin(c,'Treat yourself anyway.',W/2,1260,{t:lt,t0:.5,font:F.cor,italic:1,weight:700,size:120,maxW:940,align:'center',color:'#fff',maxLines:2});pill(c,x.cta,W/2,1520,{bg:p.ac,fg:'#fff',s:E.outBack(P(lt,1,.4)),alpha:P(lt,1,.2),size:36});brandMark(c,S,W/2,300,{size:50,color:'#fff'})}}});
 
 /* 5 — Yes… But… */
 OG({id:'og-yesbut',name:'Yes… But…',desc:'Split screen with a honest “YES… BUT…”, then the BUT is crossed out and becomes “AND it can be yours”.',pal:{bg:'#111012',fg:'#FFFFFF',ac:'#B9FA70'},dur:11,pt:7.6,hold:[.5,8.6],tags:['Originals','Relatable'],
@@ -105,7 +104,7 @@ OG({id:'og-yesbut',name:'Yes… But…',desc:'Split screen with a honest “YES�
 
 /* 6 — Gold Star Behaviour */
 OG({id:'og-goldstar',name:'Gold Star Behaviour',desc:'A sticker chart on grid paper: taped photo cards slide in and earn a shiny gold star each, the chart fills, then a bonus round earns three.',pal:{bg:'#F7F2E8',fg:'#1D1A18',ac:'#E2A72E'},tone:'light',dur:17,pt:6.2,hold:[1.2,13],tags:['Originals','Trend format'],
- r(c,t,S){const{W,H,p,x}=S;paper(c,W,H,p.bg,'rgba(60,90,140,.10)');const habits=['Chose quality over quantity','Got three compliments before noon','Wore the good one on a Tuesday','Didn’t wait for a sale','Treated themselves. Zero guilt.'];
+ r(c,t,S){const{W,H,p,x}=S;paper(c,W,H,p.bg,'rgba(60,90,140,.10)');const habits=['Chose quality over quantity','Got three compliments before noon','Used the good one on a Tuesday','Didn’t wait for a sale','Treated themselves. Zero guilt.'];
   T(c,'Gold star behaviour ⭐',W/2,210,{font:F.cor,italic:1,weight:700,size:84,align:'center',color:p.fg,p:P(t,.1,.5)});T(c,`The ${x.brand||'brand'} chart`.toUpperCase(),W/2,280,{size:26,ls:8,align:'center',color:'#8a8077',weight:700,p:P(t,.3,.5)});
   const seg=2.1,start=.9,done=k=>t>=start+k*seg+1.15;for(let k=0;k<5;k++){const cx=W/2-2*150+k*150,cy=390;star(c,cx,cy,48,done(k)?gold(p.ac):null,done(k)?mixHex(gold(p.ac),'#000000',.25):'#b8afa5',4);
     if(done(k)){const pp=E.outBack(P(t,start+k*seg+1.15,.35));c.save();c.translate(cx,cy);c.scale(pp,pp);star(c,0,0,48,gold(p.ac),mixHex(gold(p.ac),'#000000',.25),4);c.restore()}}
@@ -164,7 +163,7 @@ OG({id:'og-effect',name:'The Effect',desc:'Before/after with attitude: a cool, f
     if(sw<1){c.save();c.beginPath();c.moveTo(X+260,0);c.lineTo(X+420,0);c.lineTo(X-100,H);c.lineTo(X-260,H);c.closePath();c.clip();cover(c,B,X-200,0,520,H,{z:3,fx:.55,fy:.6});c.globalCompositeOperation='screen';c.fillStyle='rgba(255,230,180,.25)';c.fillRect(0,0,W,H);c.restore()}}
   c.restore();flash(c,W,H,t>4.55&&t<5?.85*(1-P(t,4.55,.45)):0);grad(c,W,H*.5,H*.5,'rgba(0,0,0,0)','rgba(0,0,0,.65)');
   const L=(s,t0,t1,y,col)=>{const a=P(t,t0,.25)*(1-P(t,t1,.2));if(a<=0)return;const s2=1.2-.2*E.outExpo(P(t,t0,.3));c.save();c.translate(W/2,y);c.scale(s2,s2);T(c,s,0,0,{font:FA,size:104,ls:3,align:'center',base:'middle',color:col||'#fff',alpha:a,maxW:960});c.restore()};
-  L('THE OLD LOOK',.3,1.9,1240);L('HAD THE MIC.',.8,1.9,1360,p.ac);L(`THEN ${brand.length>14?'THIS':brand}`,2.1,3.9,1240);L('INTERRUPTED.',2.6,3.9,1360,p.ac);
+  L('THE OLD WAY',.3,1.9,1240);L('HAD THE MIC.',.8,1.9,1360,p.ac);L(`THEN ${brand.length>14?'THIS':brand}`,2.1,3.9,1240);L('INTERRUPTED.',2.6,3.9,1360,p.ac);
   L(String(x.headline||'').toUpperCase(),5.2,8.2,1300,'#fff');
   kin(c,'Same you. New energy.',W/2,1240,{t,t0:8.5,font:F.cor,italic:1,weight:700,size:110,maxW:940,align:'center',color:'#fff',maxLines:2,alpha:1-P(t,10.6,.3)});
   pill(c,x.cta,W/2,1520,{bg:p.ac,fg:ink(p.ac),s:E.outBack(P(t,9.3,.4)),alpha:P(t,9.3,.2)*(1-P(t,10.6,.3)),size:36});brandMark(c,S,W/2,300,{size:48,color:'#fff',alpha:P(t,4.8,.5)});endCard(c,S,t,10.7)}});
