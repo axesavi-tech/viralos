@@ -3,7 +3,7 @@ import "server-only";
 const VER = () => process.env.SHOPIFY_API_VERSION || "2025-10";
 export function normShop(s: string) {
   const h = String(s || "").trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(h)) throw new Error("Enter your store's myshopify.com address, e.g. iraaya.myshopify.com");
+  if (!/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(h)) throw new Error("Enter your store's myshopify.com address, e.g. yourstore.myshopify.com");
   return h;
 }
 export async function gql(shop: string, token: string, query: string, variables: any = {}) {

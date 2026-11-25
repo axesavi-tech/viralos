@@ -47,7 +47,7 @@ const SIG=(o)=>R(Object.assign({sig:true,tone:'dark',grain:.045,fit:{full:1,port
 /* 1 — Monogram Reveal */
 SIG({id:'sg-monogram',name:'Monogram Reveal',desc:'Your product seen through giant brand letters, a plunge into the frame, then a kinetic headline.',pal:{bg:'#0E0B0C',fg:'#F4EEE6',ac:'#C9A978'},dur:9,pt:4.2,tags:['Signature','Kinetic type'],
  r(c,t,S){const{W,H,p,x}=S,m=S.m(0);c.fillStyle=p.bg;c.fillRect(0,0,W,H);
-  const word=String(x.brand||'').toUpperCase().slice(0,10)||'NEW';
+  const nm=String(x.brand||'').toUpperCase().trim(),w1=nm.split(/\s+/)[0]||'';const word=(nm.length<=10?nm:w1.length>=3&&w1.length<=10?w1:nm.split(/\s+/).map(w=>w[0]).join('').slice(0,4))||'NEW';
   if(t<2.9){const[b,g]=sgBuf(0,W,H);cover(g,m,0,0,W,H,{z:1.15-.08*P(t,0,2.9)});g.globalCompositeOperation='destination-in';const sz=fit(g,word,F.bod,700,980,520,-4);
     const zoom=1+Math.pow(P(t,1.7,1.2),3)*14;g.translate(W/2,H/2);g.scale(zoom,zoom);g.font=`700 ${sz}px ${F.bod}`;g.textAlign='center';g.textBaseline='middle';if('letterSpacing' in g)g.letterSpacing='-4px';g.fillText(word,0,sz*.05);
     c.save();c.globalAlpha=E.out(P(t,.15,.7));c.drawImage(b,0,0);c.restore();
