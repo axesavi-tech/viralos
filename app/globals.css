@@ -1,4 +1,4 @@
-/* VIRALOS site: editorial monochrome. Near-white canvas, near-black ink, one sand accent.
+/* Kathavi site: editorial monochrome. Near-white canvas, near-black ink, one sand accent.
    Condensed serif statements, Inter Tight text, mono labels, black primary + outlined secondary, arrows as affordances. */
 :root{--bg:#F8F8F7;--soft:#F2F1EF;--panel:#FFFFFF;--ink:#1D2320;--mute:#6E6E6B;--line:#E9E9E7;--sand:#CFC0A8;--sand-ink:#5C4A2E;
   --disp:'Instrument Serif','Bodoni Moda',Didot,serif;--body:'Inter Tight',Inter,system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace}

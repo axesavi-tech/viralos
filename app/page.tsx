@@ -17,7 +17,7 @@ const studios: [string, string, string][] = [
   ["Your store", "Shopify · WooCommerce · more", "Pull in your catalogue from any platform and send approved product copy back."],
 ];
 const faqs: [string, string][] = [
-  ["Do I need a designer?", "No. Bring product photos and a sentence about your brand. VIRALOS handles direction, copy, layout and export, and you approve every piece."],
+  ["Do I need a designer?", "No. Bring product photos and a sentence about your brand. Kathavi handles direction, copy, layout and export, and you approve every piece."],
   ["Will it use my logo and colours?", "Yes. Upload your logo once and it appears on every template, recoloured to fit each design. Without a logo, templates set your brand name in their own type."],
   ["Does AI change my product?", "Your photos are composited exactly as uploaded. AI imagery is optional and always shown side by side with the original before you approve it."],
   ["Which stores can I connect?", "Shopify, WooCommerce, BigCommerce and Wix sync both ways. Any other platform connects through a product feed, CSV or JSON link."],
@@ -27,7 +27,7 @@ const faqs: [string, string][] = [
 export default function Home() {
   return (<>
     <div className="wrap">
-      <nav className="nav" aria-label="Main"><Link href="/" className="logo">VIRAL<i>OS</i></Link>
+      <nav className="nav" aria-label="Main"><Link href="/" className="logo">Katha<i>vi</i></Link>
         <div className="links"><a href="#studios">Studios</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><Link href="/login">Sign in</Link><Link href="/login?mode=signup" className="btn pri pill arrow">Start free</Link></div></nav>
 
       <header className="hero">

@@ -1,5 +1,5 @@
-/* VIRALOS hosted bridge: gives the studio the same capability interface it uses inside Claude
-   (sample, db, user, assets, downloads, tts), backed by the VIRALOS server and its credit ledger. */
+/* Kathavi hosted bridge: gives the studio the same capability interface it uses inside Claude
+   (sample, db, user, assets, downloads, tts), backed by the Kathavi server and its credit ledger. */
 (()=>{
 'use strict';
 window.VX_HOSTED=true;

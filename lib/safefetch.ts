@@ -16,7 +16,7 @@ export async function safeFetch(raw: string, maxBytes = 2_000_000, o: SafeOpts =
     const addrs = await lookup(url.hostname, { all: true });
     if (!addrs.length || addrs.some((a) => (net.isIPv4(a.address) ? privateV4(a.address) : privateV6(a.address)))) throw new Error("That address is not a public website.");
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12_000);
-    const r = await fetch(url, { redirect: "manual", signal: ctl.signal, method: o.method || "GET", body: o.body, headers: { "user-agent": "VIRALOS/1.0 (+https://viralos.app)", accept: o.accept || "text/html,application/xhtml+xml", ...(o.headers || {}) } }).finally(() => clearTimeout(t));
+    const r = await fetch(url, { redirect: "manual", signal: ctl.signal, method: o.method || "GET", body: o.body, headers: { "user-agent": "Kathavi/1.0 (+https://kathavi.com)", accept: o.accept || "text/html,application/xhtml+xml", ...(o.headers || {}) } }).finally(() => clearTimeout(t));
     if (r.status >= 300 && r.status < 400 && r.headers.get("location")) { url = new URL(r.headers.get("location")!, url); continue; }
     if (!r.ok && !o.method) throw new Error(`The site answered ${r.status}.`);
     const reader = r.body!.getReader(); const chunks: Uint8Array[] = []; let n = 0;

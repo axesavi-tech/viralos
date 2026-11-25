@@ -1,4 +1,4 @@
-/* VIRALOS Signature reels — 12 production-grade motion templates.
+/* Kathavi Signature reels — 12 production-grade motion templates.
    Runs after Vitrine's engine: uses R, TPL, drawMedia, T, fit, E, P, clamp, kb, F, rgba, mixHex, lumOf, state, isBrand. */
 (()=>{
 const W0=1080,H0=1920,FA="'Anton', 'Oswald', Impact, sans-serif";

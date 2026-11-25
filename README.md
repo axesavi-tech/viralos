@@ -1,6 +1,6 @@
-# VIRALOS
+# Kathavi
 
-AI content and marketing studio: brand profile, campaigns, reels, posts, carousels, stories, ads and product copy. It publishes to Instagram, creates paused Meta ads and syncs with your online store.
+Kathavi is an AI content and marketing studio: brand profile, campaigns, reels, posts, carousels, stories, ads and product copy. It publishes to Instagram, creates paused Meta ads and syncs with your online store.
 
 ## Stack
 - Next.js 15 (App Router) on Vercel

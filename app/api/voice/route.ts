@@ -13,7 +13,7 @@ export const POST = route(async (req: Request) => {
   if (sample.size > 25 * 1024 * 1024) throw new HttpError(413, "Voice samples can be up to 25 MB.");
   const ch = await charge(c, "voice_clone");
   try {
-    const r = await cloneVoice(`VIRALOS · ${name}`, [{ blob: sample, filename: sample.name || "sample.mp3" }], `Cloned with consent of ${owner} for ${scope}`);
+    const r = await cloneVoice(`Kathavi · ${name}`, [{ blob: sample, filename: sample.name || "sample.mp3" }], `Cloned with consent of ${owner} for ${scope}`);
     const consent = { owner, scope, statement: "Owner's written consent confirmed by " + (c.user.email || c.user.id), at: new Date().toISOString(), by: c.user.id };
     const ins = await c.sb.from("vx_voices").insert({ workspace_id: c.ws, el_voice_id: r.voice_id, name, consent, created_by: c.user.id }).select("id,name,consent,created_at").single();
     if (ins.error) { await deleteVoice(r.voice_id); throw new Error(ins.error.message); }

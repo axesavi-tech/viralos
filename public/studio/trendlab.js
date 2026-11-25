@@ -1,4 +1,4 @@
-/* VIRALOS Trend Lab — 12 original reels in the 2026 short-form styles:
+/* Kathavi Trend Lab — 12 original reels in the 2026 short-form styles:
    velocity ramps, swipe transitions, liquid glass, stacked splits, cutout collage, chrome, bold minimalism,
    dreamy slow-mo, transformation reveal, multi-clip rush, kinetic type, parallax depth. Original designs. */
 (()=>{

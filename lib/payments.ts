@@ -31,7 +31,7 @@ export async function rzPayment(paymentId: string) {
 export async function stripeCheckout(order: string, amount: number, currency: string, name: string, origin: string, email?: string) {
   const k = process.env.STRIPE_SECRET_KEY; if (!k) throw new Error("Stripe is not configured yet (STRIPE_SECRET_KEY).");
   const f = new URLSearchParams({ mode: "payment", success_url: `${origin}/studio/index.html#account`, cancel_url: `${origin}/studio/index.html#account`, client_reference_id: order, "metadata[order]": order,
-    "line_items[0][quantity]": "1", "line_items[0][price_data][currency]": currency, "line_items[0][price_data][unit_amount]": String(amount), "line_items[0][price_data][product_data][name]": `VIRALOS · ${name}` });
+    "line_items[0][quantity]": "1", "line_items[0][price_data][currency]": currency, "line_items[0][price_data][unit_amount]": String(amount), "line_items[0][price_data][product_data][name]": `Kathavi · ${name}` });
   if (email) f.set("customer_email", email);
   const r = await fetch("https://api.stripe.com/v1/checkout/sessions", { method: "POST", headers: { Authorization: `Bearer ${k}`, "Content-Type": "application/x-www-form-urlencoded" }, body: f });
   const j = await r.json(); if (!r.ok) throw new Error("Stripe: " + (j?.error?.message || r.status)); return j as { id: string; url: string };

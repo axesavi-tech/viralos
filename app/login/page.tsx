@@ -19,7 +19,7 @@ function Form() {
       location.href = next;
     } catch (e: any) { setErr(e.message || "Something went wrong."); } finally { setBusy(false); }
   }
-  return (<div className="auth"><Link href="/" className="logo">VIRAL<i>OS</i></Link>
+  return (<div className="auth"><Link href="/" className="logo">Katha<i>vi</i></Link>
     <h1>{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
     <p className="muted small">{mode === "signup" ? "150 free credits to start. No card needed." : "Sign in to your creative department."}</p>
     <form onSubmit={submit}><label htmlFor="em">Email</label><input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
