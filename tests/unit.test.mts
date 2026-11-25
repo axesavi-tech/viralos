@@ -34,3 +34,4 @@ await t("store: key formats checked before any network call", async () => {
   await assert.rejects(() => C.ADAPTERS.feed.connect({ url: "http://127.0.0.1/feed.xml" })); });
 await t("store: update refuses malformed product ids", async () => { await assert.rejects(() => C.ADAPTERS.woocommerce.update!({ site: "https://x.com", key: "k", secret: "s" }, "1;drop", {}), /Unknown product/); await assert.rejects(() => C.ADAPTERS.bigcommerce.update!({ hash: "abc123", token: "t" }, "../2", {}), /Unknown product/); });
 console.log(`${n} passed`);
+

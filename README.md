@@ -6,6 +6,7 @@ Kathavi is an AI content and marketing studio: brand profile, campaigns, reels, 
 - Next.js 15 (App Router) on Vercel
 - Supabase: auth, Postgres with row-level security, storage bucket `viralos`. Shares the Swara project; every object is prefixed `vx_`.
 - Claude (text, live web research), fal.ai (images and video), ElevenLabs (voice cloning and TTS)
+- AI footage in the Creative Studio: Seedance 2.5, Kling 4.0, Wan 3.0, Veo 3.1, MiniMax H3 (all via `FAL_KEY`), Runway Gen-4.5 (`RUNWAYML_API_SECRET`) and Gemini Omni Flash (`GEMINI_API_KEY`). A model without its key shows as "not connected". Prices per second are in `lib/credits.ts` (`VIDEO_RATES`, ≈3× provider cost) and can be overridden in `vx_settings.rates`; set `providers.kling_model` / `providers.omni_model` to switch model versions.
 - Razorpay (INR) and Stripe (USD) for credits and plans
 - Meta Graph API (Instagram publishing; ads are always created **paused**)
 - Store plug-ins: Shopify, WooCommerce, BigCommerce and Wix (two-way), plus any other platform through a product feed, CSV or JSON link (read-only, with CSV export)

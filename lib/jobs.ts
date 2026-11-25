@@ -14,9 +14,14 @@ export async function advance(c: Ctx, id: string) {
   const j = (await c.sb.from("vx_jobs").select("*").eq("id", id).eq("workspace_id", c.ws).single()).data;
   if (!j) throw new Error("Job not found");
   if (j.status !== "running") return j;
-  const fal: FalJob = j.request.fal;
-  let st: Awaited<ReturnType<typeof falPoll>>;
-  try { st = await falPoll(fal); } catch (e: any) { return { ...j, note: e.message }; }
+  let st: { state: "running" } | { state: "done"; data: any } | { state: "failed"; error: string };
+  try {
+    if (j.provider === "runway" && j.request?.runway?.id) {
+      const { runwayPoll } = await import("./video");
+      const r = await runwayPoll(j.request.runway.id);
+      st = r.state === "done" ? { state: "done", data: { video: { url: r.url } } } : r;
+    } else st = await falPoll(j.request.fal as FalJob);
+  } catch (e: any) { return { ...j, note: e.message }; }
   if (st.state === "running") return j;
   if (st.state === "failed") {
     await c.sb.from("vx_jobs").update({ status: "failed", error: st.error, updated_at: new Date().toISOString() }).eq("id", id);

@@ -9,9 +9,11 @@ export async function settings(c: Ctx) {
   cache = { at: Date.now(), rates: get("rates"), providers: get("providers") };
   return cache;
 }
+/** Per-second prices for AI footage models (≈3× provider cost). Admins can override any of them in vx_settings.rates. */
+export const VIDEO_RATES: Record<string, number> = { vid_seedance: 146, vid_kling: 30, vid_wan: 31, vid_veo: 124, vid_runway: 38, vid_minimax: 19, vid_omni: 31 };
 export async function rateOf(c: Ctx, action: string, units = 1) {
   const s = await settings(c);
-  const r = s.rates[action] ?? s.rates["studio_ai"] ?? 5;
+  const r = s.rates[action] ?? VIDEO_RATES[action] ?? s.rates["studio_ai"] ?? 5;
   return Math.max(0, Math.ceil(r * units));
 }
 /** Reserve credits before work. Returns the charge reference for refunds. */
