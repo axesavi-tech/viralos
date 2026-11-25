@@ -38,5 +38,5 @@ const P: Record<string, [string, [string, string][]]> = {
 export function generateStaticParams() { return Object.keys(P).map((slug) => ({ slug })); }
 export default async function Legal({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params; const p = P[slug]; if (!p) notFound();
-  return (<div className="wrap"><nav className="nav"><Link href="/" className="logo">VIRAL<i>OS</i></Link></nav><article className="legal"><h1>{p[0]}</h1><p className="muted small">Last updated {new Date().getFullYear()}</p>{p[1].map(([h, t]) => <section key={h}><h2>{h}</h2><p>{t}</p></section>)}</article><Footer /></div>);
+  return (<div className="wrap"><nav className="nav"><Link href="/" className="logo">VIRAL<i>OS</i></Link><div className="links"><Link href="/">Home</Link><Link href="/login" className="btn pri pill arrow">Sign in</Link></div></nav><article className="legal"><h1>{p[0]}</h1><p className="muted small">Last updated {new Date().getFullYear()}</p>{p[1].map(([h, t]) => <section key={h}><h2>{h}</h2><p>{t}</p></section>)}</article><Footer /></div>);
 }

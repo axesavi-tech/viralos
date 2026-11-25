@@ -20,12 +20,12 @@ function Form() {
     } catch (e: any) { setErr(e.message || "Something went wrong."); } finally { setBusy(false); }
   }
   return (<div className="auth"><Link href="/" className="logo">VIRAL<i>OS</i></Link>
-    <h1 style={{ fontSize: 34, margin: "18px 0 6px" }}>{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
+    <h1>{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
     <p className="muted small">{mode === "signup" ? "150 free credits to start. No card needed." : "Sign in to your creative department."}</p>
     <form onSubmit={submit}><label htmlFor="em">Email</label><input id="em" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
       {mode !== "magic" && <><label htmlFor="pw">Password</label><input id="pw" type="password" required minLength={8} value={pw} onChange={(e) => setPw(e.target.value)} autoComplete={mode === "signup" ? "new-password" : "current-password"} /></>}
       <div className="err" role="alert">{err}</div><div className="ok" role="status">{ok}</div>
-      <button className="btn pri" style={{ width: "100%" }} disabled={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "magic" ? "Email me a link" : "Sign in"}</button></form>
+      <button className="btn pri arrow" style={{ width: "100%" }} disabled={busy}>{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "magic" ? "Email me a link" : "Sign in"}</button></form>
     <p className="small" style={{ marginTop: 16 }}>{mode === "signup" ? <>Have an account? <a href="#" onClick={() => setMode("signin")}>Sign in</a></> : <>New here? <a href="#" onClick={() => setMode("signup")}>Create an account</a> · <a href="#" onClick={() => setMode("magic")}>Email me a link</a></>}</p>
     <p className="muted small">By continuing you agree to the <Link href="/legal/terms">Terms</Link> and <Link href="/legal/privacy">Privacy policy</Link>.</p></div>);
 }
