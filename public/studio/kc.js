@@ -15,7 +15,7 @@ const clip=(c,x,y,w,h)=>{c.beginPath();c.rect(x,y,w,h);c.clip()};
 const scrimB=(c,W,H,a=.78,from=.42)=>{const g=c.createLinearGradient(0,H*from,0,H);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(.35,`rgba(0,0,0,${a*.35})`);g.addColorStop(.7,`rgba(0,0,0,${a*.8})`);g.addColorStop(1,`rgba(0,0,0,${a})`);c.fillStyle=g;c.fillRect(0,H*from,W,H*(1-from))};
 const scrimT=(c,W,H,a=.6,to=.3)=>{const g=c.createLinearGradient(0,0,0,H*to);g.addColorStop(0,`rgba(0,0,0,${a})`);g.addColorStop(.6,`rgba(0,0,0,${a*.35})`);g.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=g;c.fillRect(0,0,W,H*to)};
 const hair=(c,x1,y1,x2,y2,col,lw=2,p=1)=>{if(p<=0)return;c.save();c.strokeStyle=col;c.lineWidth=lw;c.beginPath();c.moveTo(x1,y1);c.lineTo(x1+(x2-x1)*clamp(p),y1+(y2-y1)*clamp(p));c.stroke();c.restore()};
-const mono=(c,s,x,y,o={})=>T(c,s,x,y,{font:PM,weight:500,size:o.size||24,ls:o.ls??3,upper:o.upper??1,color:o.color||'#fff',align:o.align,alpha:o.alpha,p:o.p,maxW:o.maxW,base:o.base});
+const mono=(c,s,x,y,o={})=>T(c,s,x,y,{font:PM,weight:500,size:o.size||24,ls:o.ls??3,upper:o.upper??1,color:o.color||'#fff',align:o.align,alpha:o.alpha,p:o.p,maxW:o.maxW,maxLines:o.maxLines??1,base:o.base});
 /* Shared closing frame: brand + CTA + handle, in the template's family voice. */
 function outro(c,S,t,t0,f={}){const{W,H,p,x}=S,a=E.out(P(t,t0,.6));if(a<=0)return;const bg=f.bg||p.bg,fg=f.fg||ink(bg);
   c.save();c.globalAlpha=a;c.fillStyle=bg;c.fillRect(0,0,W,H);c.restore();
@@ -315,10 +315,152 @@ KC({id:'kc-review',name:'Love Note',fam:'Lifestyle',desc:'A five-star customer n
   if(x.cta)pill(c,x.cta,W/2,1680,{bg:p.fg,fg:p.bg,s:E.outBack(P(t,3.6,.5)),alpha:P(t,3.6,.2),size:28});
   T(c,x.headline,W/2,310,{font:IS,size:80,align:'center',color:'#fff',maxW:W-180,maxLines:2,p:P(t,.2,.7),shadow:'rgba(0,0,0,.45)',sb:30})}});
 
+/* =====================================================================
+   BATCH 2 · 25 POSTS (1080×1350) — same five families, static compositions
+   ===================================================================== */
+const KP=(o)=>Po(Object.assign({kc:true,tone:'dark',grain:.03,fit:{full:1,portrait:1,clean:1},multi:1},o));
+const foot=(c,S,y,col,o={})=>{const{W,x}=S;hair(c,80,y,W-80,y,rgba(col,.3),2,1);mono(c,x.brand,80,y+44,{color:col,size:20,maxW:520});mono(c,o.right??x.handle,W-80,y+44,{align:'right',color:rgba(col,.65),size:20,upper:0,maxW:420})};
+
+/* ---- Editorial ---- */
+KP({id:'kc-p-cover',name:'The Cover',fam:'Editorial',desc:'A magazine cover: your brand as the masthead, full-bleed shot, cover lines with page numbers.',pal:{bg:'#F4F1EA',fg:'#111113',ac:'#C23B22'},tags:['Editorial','Magazine'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.04,fy:.4});scrimT(c,W,H,.5,.34);scrimB(c,W,H,.82,.5);
+  const mh=fit(c,String(x.brand||'').toUpperCase(),IS,400,W-110,240,-2);T(c,x.brand,W/2,90+mh*.74,{font:IS,size:mh,align:'center',upper:1,ls:-2,color:'#fff'});
+  mono(c,`Issue ${String(new Date().getMonth()+1).padStart(2,'0')} · ${issue()}`,W/2,90+mh*.74+50,{align:'center',size:20});
+  feats(x).forEach((f,i)=>{const y=930+i*74;mono(c,String(i*14+12).padStart(3,'0'),80,y,{size:20});T(c,f,160,y+2,{font:IS,size:46,color:'#fff',maxW:760,maxLines:1})});
+  T(c,x.headline,80,1260,{font:IS,italic:1,size:80,color:'#fff',maxW:900,maxLines:2,anchor:'bottom'})}});
+KP({id:'kc-p-index',name:'The Index',fam:'Editorial',desc:'A contents page: numbered lines with hairline rules and a strip of photo windows.',pal:{bg:'#111113',fg:'#F5F4EF',ac:'#B9FA70'},tags:['Editorial','List'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);mono(c,'Index',80,120,{color:p.ac});mono(c,x.brand,W-80,120,{align:'right',color:rgba(p.fg,.6),maxW:600});hair(c,80,150,W-80,150,rgba(p.fg,.3),2,1);
+  const n=Math.min(3,Math.max(1,S.n)),tw=(W-160-(n-1)*16)/n;for(let i=0;i<n;i++){c.save();clip(c,80+i*(tw+16),190,tw,560);cover(c,S.m(i),80+i*(tw+16),190,tw,560,{z:1.06});c.restore()}
+  const items=[x.headline,...feats(x)].filter(Boolean).slice(0,4);let y=830;items.forEach((s,i)=>{mono(c,String(i+1).padStart(2,'0'),80,y+50,{color:p.ac,size:24});T(c,s,160,y+54,{font:IS,size:60,color:p.fg,maxW:840,maxLines:1});y+=100;hair(c,80,y,W-80,y,rgba(p.fg,.18),2,1)});
+  if(x.cta)mono(c,x.cta+'  →',80,H-80,{color:p.fg,size:22,maxW:900})}});
+KP({id:'kc-p-caption',name:'Caption Study',fam:'Editorial',desc:'Museum-quiet: one framed photograph with a typed catalogue caption beneath.',pal:{bg:'#EDEAE3',fg:'#1A1A1A',ac:'#1A1A1A'},tone:'light',tags:['Editorial','Minimal'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,110,110,W-220,930);cover(c,S.m(0),110,110,W-220,930,{z:1.03});c.restore();
+  hair(c,110,1090,W-110,1090,rgba(p.fg,.35),2,1);mono(c,`01 — ${x.headline||x.brand}`,110,1140,{color:p.fg,size:24,upper:0,ls:1,maxW:W-220});
+  mono(c,feats(x).join(' · ')||x.sub,110,1185,{color:rgba(p.fg,.6),size:20,upper:0,ls:1,maxW:W-220});mono(c,x.brand,110,1250,{color:rgba(p.fg,.55),size:18,maxW:500});mono(c,x.label||issue(),W-110,1250,{align:'right',color:rgba(p.fg,.55),size:18,maxW:400})}});
+KP({id:'kc-p-quote',name:'The Pull-Quote',fam:'Editorial',desc:'A huge italic pull-quote on paper with a small photo inset and attribution rule.',pal:{bg:'#F6F1E7',fg:'#1D1B19',ac:'#A8743B'},tone:'light',tags:['Editorial','Quote'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);T(c,'“',80,330,{font:IS,size:300,color:p.ac});
+  T(c,x.sub||x.headline,80,420,{font:IS,italic:1,size:92,color:p.fg,maxW:W-160,maxLines:4,lh:1.06});
+  c.save();clip(c,W-80-380,H-80-480,380,480);cover(c,S.m(0),W-80-380,H-80-480,380,480,{z:1.05});c.restore();
+  hair(c,80,H-170,240,H-170,p.ac,3,1);mono(c,x.brand,80,H-125,{color:p.fg,size:22,maxW:460});if(x.cta)mono(c,x.cta,80,H-85,{color:rgba(p.fg,.6),size:20,maxW:460})}});
+KP({id:'kc-p-spread',name:'Feature Page',fam:'Editorial',desc:'Top half photograph, bottom half a set feature: kicker, headline, italic standfirst, folio.',pal:{bg:'#F5F2EC',fg:'#151515',ac:'#8A6A3B'},tone:'light',tags:['Editorial','Layout'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,0,0,W,700);cover(c,S.m(0),0,0,W,700,{z:1.04,fy:.45});c.restore();
+  mono(c,x.label||'Feature',80,790,{color:p.ac,size:22});T(c,x.headline||x.brand,80,880,{font:IS,size:96,color:p.fg,maxW:W-160,maxLines:2,lh:1.02});
+  hair(c,80,1090,200,1090,p.ac,3,1);T(c,x.sub,80,1160,{font:IS,italic:1,size:44,color:rgba(p.fg,.8),maxW:W-160,maxLines:2,lh:1.18});foot(c,S,H-110,p.fg,{right:'p. 24'})}});
+
+/* ---- Maison ---- */
+KP({id:'kc-p-letterbox',name:'Maison Letterbox',fam:'Maison',desc:'Cinema bands, tracked wordmark, gold hairline frame and the line set in the lower band.',pal:{bg:'#0B0A09',fg:'#F3EBDD',ac:'#C9A96E'},grain:.05,tags:['Luxury','Cinematic'],
+ r(c,t,S){const{W,H,p,x}=S;const bar=190;c.fillStyle=p.bg;c.fillRect(0,0,W,H);cover(c,S.m(0),0,bar,W,H-2*bar,{z:1.05});vignette(c,W,H,.4);c.fillStyle=p.bg;c.fillRect(0,0,W,bar);c.fillRect(0,H-bar,W,bar);
+  const IT2="'Italiana', serif";T(c,x.brand,W/2,bar/2+6,{font:IT2,size:Math.min(78,fit(c,x.brand||'',IT2,400,W-200,78,20)),ls:20,upper:1,align:'center',base:'middle',color:p.fg});
+  c.strokeStyle=rgba(p.ac,.9);c.lineWidth=2;c.strokeRect(60,bar+40,W-120,H-2*bar-80);
+  T(c,x.headline,W/2,H-bar+90,{font:IT2,size:54,align:'center',color:p.fg,maxW:W-200,maxLines:1});mono(c,x.label||issue(),W/2,H-bar+150,{align:'center',color:rgba(p.fg,.6),size:18,ls:8})}});
+KP({id:'kc-p-arch',name:'Atelier Arch',fam:'Maison',desc:'The product framed in an arched atelier window on warm stone, with a quiet serif lockup.',pal:{bg:'#EFE7DA',fg:'#2B2118',ac:'#9C6B3C'},tone:'light',tags:['Luxury','Shape'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const aw=600,ah=820,ax=W/2-aw/2,ay=90;c.save();archPath(c,ax,ay,aw,ah);c.clip();cover(c,S.m(0),ax,ay,aw,ah,{z:1.05});c.restore();
+  c.strokeStyle=p.ac;c.lineWidth=2;archPath(c,ax-22,ay-22,aw+44,ah+44);c.stroke();
+  T(c,x.brand,W/2,1030,{font:IS,size:86,align:'center',color:p.fg,maxW:W-160,maxLines:1});mono(c,x.label||'Atelier',W/2,1085,{align:'center',color:p.ac,size:20,ls:8});
+  T(c,x.headline,W/2,1170,{font:IS,italic:1,size:46,align:'center',color:rgba(p.fg,.85),maxW:W-200,maxLines:2});if(x.cta)mono(c,x.cta,W/2,H-70,{align:'center',color:p.fg,size:20,ls:6})}});
+KP({id:'kc-p-seal',name:'The Seal',fam:'Maison',desc:'Full-bleed shot sealed with a wax monogram in the corner and a serif title.',pal:{bg:'#14100E',fg:'#F2E8D8',ac:'#8E1B23'},tags:['Luxury','Monogram'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.04});scrimB(c,W,H,.82,.45);const init=String(x.brand||'K').trim()[0]?.toUpperCase()||'K',cx=W-210,cy=210,r=120;
+  c.save();c.translate(cx,cy);c.shadowColor='rgba(0,0,0,.45)';c.shadowBlur=30;c.shadowOffsetY=10;c.beginPath();for(let i=0;i<=40;i++){const a=i/40*Math.PI*2,rr2=r*(1+.05*Math.sin(i*2.7));c.lineTo(Math.cos(a)*rr2,Math.sin(a)*rr2)}c.closePath();
+  const gg=c.createRadialGradient(-30,-40,10,0,0,r*1.1);gg.addColorStop(0,mixHex(p.ac,'#ffffff',.25));gg.addColorStop(1,mixHex(p.ac,'#000000',.35));c.fillStyle=gg;c.fill();c.shadowColor='transparent';
+  c.strokeStyle='rgba(0,0,0,.25)';c.lineWidth=4;c.beginPath();c.arc(0,0,r*.72,0,7);c.stroke();T(c,init,0,6,{font:IS,size:130,align:'center',base:'middle',color:'rgba(255,255,255,.85)'});c.restore();
+  T(c,x.headline,80,1110,{font:IS,size:96,color:'#fff',maxW:900,maxLines:2,anchor:'bottom'});mono(c,[x.brand,x.cta].filter(Boolean).join('   ·   '),80,1200,{color:'#fff',size:22,maxW:900})}});
+KP({id:'kc-p-viewing',name:'Private Viewing',fam:'Maison',desc:'Your product hung as a gallery piece under a picture light, with a museum placard.',pal:{bg:'#2A2622',fg:'#F4EDE2',ac:'#C9A96E'},tags:['Luxury','Gallery'],
+ r(c,t,S){const{W,H,p,x}=S;const wall=c.createLinearGradient(0,0,0,H);wall.addColorStop(0,mixHex(p.bg,'#000000',.3));wall.addColorStop(.82,p.bg);wall.addColorStop(.82,mixHex(p.bg,'#000000',.5));wall.addColorStop(1,'#000');c.fillStyle=wall;c.fillRect(0,0,W,H);
+  const cx=W/2,cy=600,fw=560,fh=720;const L=c.createRadialGradient(cx,cy-420,10,cx,cy-80,640);L.addColorStop(0,'rgba(255,236,200,.42)');L.addColorStop(1,'rgba(255,236,200,0)');c.fillStyle=L;c.fillRect(0,0,W,H);
+  c.fillStyle=p.ac;c.fillRect(cx-90,cy-fh/2-100,180,14);c.save();c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=50;c.shadowOffsetY=24;c.fillStyle=p.ac;c.fillRect(cx-fw/2-30,cy-fh/2-30,fw+60,fh+60);c.restore();c.fillStyle='#F4EFE6';c.fillRect(cx-fw/2-14,cy-fh/2-14,fw+28,fh+28);cover(c,S.m(0),cx-fw/2,cy-fh/2,fw,fh,{z:1.04});
+  c.fillStyle='#F4EFE6';c.fillRect(cx+fw/2-260,cy+fh/2+60,300,140);T(c,x.headline||x.brand,cx+fw/2-240,cy+fh/2+108,{font:IS,size:30,color:'#2a2622',maxW:260,maxLines:1});mono(c,x.label||'Mixed media',cx+fw/2-240,cy+fh/2+146,{color:'#2a2622',size:15,maxW:260,upper:0,ls:1});mono(c,x.price,cx+fw/2-240,cy+fh/2+176,{color:'#2a2622',size:15,maxW:260,upper:0,ls:1});
+  mono(c,'Private viewing',80,H-120,{color:rgba(p.fg,.7),size:20,ls:6});T(c,x.brand,80,H-70,{font:IS,size:44,color:p.fg,maxW:560,maxLines:1})}});
+KP({id:'kc-p-noir',name:'Noir',fam:'Maison',desc:'High-contrast black-and-white with grain, a gold hairline frame and a centred serif title.',pal:{bg:'#0A0A0A',fg:'#FFFFFF',ac:'#E9D5A8'},grain:.08,tags:['Cinematic','Monochrome'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.05,filter:'grayscale(1) contrast(1.25) brightness(.92)'});vignette(c,W,H,.6);c.fillStyle='rgba(0,0,0,.25)';c.fillRect(0,0,W,H);
+  c.strokeStyle=rgba(p.ac,.85);c.lineWidth=2;c.strokeRect(50,50,W-100,H-100);
+  T(c,x.brand,W/2,H/2-20,{font:IS,size:fit(c,x.brand||'',IS,400,W-220,150),align:'center',base:'middle',color:'#fff'});hair(c,W/2-120,H/2+70,W/2+120,H/2+70,p.ac,2,1);
+  T(c,x.headline,W/2,H/2+150,{font:IS,italic:1,size:48,align:'center',color:'#fff',maxW:W-260,maxLines:2});mono(c,x.label||'',W/2,H-110,{align:'center',color:p.ac,size:18,ls:8})}});
+
+/* ---- Product film ---- */
+KP({id:'kc-p-spec',name:'Hero Spec',fam:'Product film',desc:'Studio-clean product with three hairline callouts, the name and the price.',pal:{bg:'#F2F2F0',fg:'#111113',ac:'#111113'},tone:'light',tags:['Product','Specs'],
+ r(c,t,S){const{W,H,p,x}=S;const bg=c.createRadialGradient(W/2,560,50,W/2,640,900);bg.addColorStop(0,mixHex(p.bg,'#ffffff',.6));bg.addColorStop(1,p.bg);c.fillStyle=bg;c.fillRect(0,0,W,H);
+  T(c,x.brand,W/2,110,{font:IT,weight:600,size:26,ls:8,upper:1,align:'center',color:p.fg});const r=card(c,S.m(0),W/2,600,600,800,{border:0,z:1.02});
+  const fs=feats(x).length?feats(x):['Thoughtfully made','Built to last','Limited release'];const pts=[[.3,.3,'L',330],[.72,.5,'R',560],[.36,.74,'L',780]];
+  fs.slice(0,3).forEach((f,i)=>{const[fx,fy,side,ly]=pts[i];const px=r?r.x+r.w*fx:W/2,py=r?r.y+r.h*fy:600,ex=side==='L'?70:W-70;c.fillStyle=p.fg;c.beginPath();c.arc(px,py,7,0,7);c.fill();hair(c,px,py,px+(ex-px)*.4,ly,p.fg,2,1);hair(c,px+(ex-px)*.4,ly,ex,ly,p.fg,2,1);
+    T(c,f,ex,ly-16,{font:IT,weight:600,size:26,align:side==='L'?'left':'right',color:p.fg,maxW:230,maxLines:2,anchor:'bottom'})});
+  T(c,x.headline,W/2,1150,{font:IT,weight:700,size:60,ls:-1,align:'center',color:p.fg,maxW:W-160,maxLines:2,anchor:'bottom'});if(x.price)T(c,x.price,W/2,1230,{font:IT,weight:500,size:38,align:'center',color:rgba(p.fg,.7)})}});
+KP({id:'kc-p-mask',name:'Type Mask',fam:'Product film',desc:'One giant word with your product photographed inside the letters.',pal:{bg:'#0E0E10',fg:'#FFFFFF',ac:'#B9FA70'},tags:['Product','Typography'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const word=String((x.headline||x.brand||'NEW').split(/\s+/)[0]).toUpperCase().slice(0,10);const size=fit(c,word,AN,400,W-70,640,0);
+  if(!this._b)this._b=document.createElement('canvas');const b=this._b;b.width=W;b.height=H;const g=b.getContext('2d');g.clearRect(0,0,W,H);cover(g,S.m(0),0,0,W,H,{z:1.1});g.globalCompositeOperation='destination-in';g.fillStyle='#000';g.font=`400 ${size}px ${AN}`;g.textAlign='center';g.textBaseline='middle';g.fillText(word,W/2,H/2-30);g.globalCompositeOperation='source-over';c.drawImage(b,0,0);
+  mono(c,x.brand,W/2,H/2-30-size*.62,{align:'center',size:24,ls:10,color:'#fff',maxW:W-160});T(c,x.headline,W/2,H/2-30+size*.62+30,{font:IT,weight:600,size:40,align:'center',color:'#fff',maxW:W-200,maxLines:2});
+  if(x.cta)mono(c,x.cta+'  →',W/2,H-90,{align:'center',size:22,color:p.ac,maxW:W-200})}});
+KP({id:'kc-p-duo',name:'Two Angles',fam:'Product film',desc:'Two views side by side on a clean stage, labelled like a product sheet.',pal:{bg:'#ECEBE6',fg:'#141414',ac:'#141414'},tone:'light',tags:['Product','Comparison'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);T(c,x.headline,80,150,{font:IT,weight:700,size:66,ls:-1,color:p.fg,maxW:W-160,maxLines:2});const cw=(W-160-20)/2,y=380,h=760;
+  [0,1].forEach(i=>{c.save();clip(c,80+i*(cw+20),y,cw,h);cover(c,S.m(i),80+i*(cw+20),y,cw,h,{z:i?1.6:1.04,fy:i?.4:.45});c.restore();mono(c,`${String(i+1).padStart(2,'0')} — ${[x.f1||'Front',x.f2||'Detail'][i]}`,80+i*(cw+20),y+h+44,{color:p.fg,size:20,upper:0,ls:1,maxW:cw})});
+  foot(c,S,H-90,p.fg,{right:x.price||x.handle})}});
+KP({id:'kc-p-grid',name:'Split Focus',fam:'Product film',desc:'A precise three-image grid with a headline band — the collection at a glance.',pal:{bg:'#101012',fg:'#FFFFFF',ac:'#B9FA70'},tags:['Product','Grid'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const g=14,top=180,hh=900;const A=[[0,0,1,.55],[0,.55,.5,.45],[.5,.55,.5,.45]];
+  A.forEach((a,i)=>{const X=a[0]*W+g,Y=top+a[1]*hh+g,Wd=a[2]*W-2*g,Hd=a[3]*hh-2*g;c.save();clip(c,X,Y,Wd,Hd);cover(c,S.m(i),X,Y,Wd,Hd,{z:1.06});c.restore()});
+  T(c,x.brand,80,120,{font:IT,weight:700,size:32,ls:2,upper:1,color:'#fff',maxW:600,maxLines:1});mono(c,x.label||'Collection',W-80,120,{align:'right',color:p.ac,size:20,maxW:400});
+  T(c,x.headline,80,1180,{font:IT,weight:700,size:60,ls:-1,color:'#fff',maxW:W-160,maxLines:1});mono(c,feats(x).join('  ·  '),80,1250,{color:rgba('#ffffff',.7),size:20,maxW:W-160})}});
+KP({id:'kc-p-launch',name:'Now Available',fam:'Product film',desc:'Launch announcement: “Now available”, the product in light, the name, price and call to action.',pal:{bg:'#000000',fg:'#FFFFFF',ac:'#B9FA70'},tags:['Launch','Product'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.05});scrimB(c,W,H,.9,.38);scrimT(c,W,H,.5,.25);brandMark(c,S,W/2,110,{size:40,color:'#fff'});
+  mono(c,'Now available',80,950,{color:p.ac,size:24});T(c,x.headline,80,1040,{font:IT,weight:700,size:96,ls:-3,color:'#fff',maxW:920,maxLines:2});
+  T(c,x.price,80,1265,{font:IT,weight:500,size:44,color:'#fff'});if(x.cta)pill(c,x.cta,W-80-190,1250,{bg:p.ac,fg:ink(p.ac),size:26})}});
+
+/* ---- Kinetic (bold, static) ---- */
+KP({id:'kc-p-poster',name:'Bold Poster',fam:'Kinetic',desc:'A gig-poster headline in heavy condensed type across a colour block and photo.',pal:{bg:'#FF4D2E',fg:'#111111',ac:'#111111'},tags:['Kinetic','Poster'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,0,560,W,H-560);cover(c,S.m(0),0,560,W,H-560,{z:1.05});c.restore();
+  const words=String(x.headline||x.brand||'').toUpperCase();T(c,words,60,90,{font:AN,size:200,color:ink(p.bg),maxW:W-120,maxLines:3,lh:.92,base:'top'});
+  c.fillStyle=ink(p.bg);c.fillRect(60,H-130,W-120,70);mono(c,[x.brand,x.cta].filter(Boolean).join('   ✦   '),W/2,H-86,{align:'center',color:p.bg,size:24,maxW:W-180})}});
+KP({id:'kc-p-outline',name:'Outline Marquee',fam:'Kinetic',desc:'Rows of outlined brand type behind a tilted product card, solid headline below.',pal:{bg:'#F0EEE9',fg:'#111113',ac:'#111113'},tone:'light',tags:['Kinetic','Type'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const word=String(x.brand||'').toUpperCase()+' • ';
+  for(let r=0;r<7;r++){const y=150+r*180;c.save();c.font=`400 170px ${AN}`;const w=Math.max(200,c.measureText(word).width);c.restore();for(let k=-2;k<5;k++)T(c,word,k*w-(r%2?w/2:0),y,{font:AN,size:170,color:p.fg,stroke:2,alpha:.2})}
+  c.save();c.translate(W/2,560);c.rotate(-.04);c.shadowColor='rgba(0,0,0,.28)';c.shadowBlur=60;c.shadowOffsetY=30;c.fillStyle='#fff';c.fillRect(-260,-340,520,680);c.shadowColor='transparent';cover(c,S.m(0),-246,-326,492,652,{z:1.04});c.restore();
+  c.fillStyle=p.bg;c.fillRect(0,1000,W,H-1000);T(c,x.headline,W/2,1090,{font:AN,size:110,align:'center',upper:1,color:p.fg,maxW:W-140,maxLines:2,lh:.95});if(x.cta)mono(c,x.cta+'  ↗',W/2,H-60,{align:'center',color:p.fg,size:22})}});
+KP({id:'kc-p-stack',name:'Stacked Type',fam:'Kinetic',desc:'Headline stacked in alternating solid and outline lines with photo strips between.',pal:{bg:'#1B1B1B',fg:'#F7F5F0',ac:'#F2C94C'},tags:['Kinetic','Poster'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const raw=String(x.headline||x.brand||'').toUpperCase().split(/\s+/).filter(Boolean);const L=[];
+  if(raw.length<=4)L.push(...raw);else{c.save();c.font=`400 150px ${AN}`;let l='';for(const w of raw){const tt=l?l+' '+w:w;if(c.measureText(tt).width>W-160&&l){L.push(l);l=w}else l=tt}if(l)L.push(l);c.restore();while(L.length>4){const i=L.length-2;L.splice(i,2,L[i]+' '+L[i+1])}}
+  const cap=L.length>3?160:210;let y=130;L.forEach((w,i)=>{const sz=Math.min(cap,fit(c,w,AN,400,W-160,cap,0));T(c,w,80,y+sz*.82,{font:AN,size:sz,color:i===1?p.ac:p.fg,stroke:i%2?3:0});y+=sz*.92;if(i===0){const sh=L.length<=4&&raw.length<=4?330:190;c.save();clip(c,80,y+8,W-160,sh);cover(c,S.m(0),80,y+8,W-160,sh,{z:1.12,fy:.4});c.restore();y+=sh+16}});
+  foot(c,S,Math.min(y+40,H-110),p.fg,{right:x.cta})}});
+KP({id:'kc-p-ticker',name:'Ticker Tape',fam:'Kinetic',desc:'Diagonal event tapes with brand, line and price crossing the photo.',pal:{bg:'#111111',fg:'#FFFFFF',ac:'#B9FA70'},tags:['Kinetic','Offer'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.05});c.fillStyle='rgba(0,0,0,.18)';c.fillRect(0,0,W,H);
+  const band=(ang,y,col,txt,off)=>{c.save();c.translate(W/2,y);c.rotate(ang);c.fillStyle=col;c.fillRect(-W,-56,W*2,112);c.font=`400 68px ${AN}`;const seg=(txt+'  ✦  ').toUpperCase(),w=c.measureText(seg).width;for(let k=-4;k<6;k++)T(c,seg,-W+k*w-off,24,{font:AN,size:68,color:ink(col)});c.restore()};
+  band(-.16,430,p.ac,[x.brand,x.label].filter(Boolean).join('  ✦  ')||'New',60);band(.12,760,'#ffffff',[x.headline,x.price].filter(Boolean).join('  ✦  ')||'Now',140);band(-.07,1080,p.bg,[x.brand,x.cta].filter(Boolean).join('  ✦  ')||'Shop',20)}});
+KP({id:'kc-p-offer',name:'The Offer',fam:'Kinetic',desc:'A confident offer card: the price huge, the terms in mono, the product beside it.',pal:{bg:'#F2C94C',fg:'#111111',ac:'#111111'},tone:'light',tags:['Offer','Sale'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,W*.48,0,W*.52,H);cover(c,S.m(0),W*.48,0,W*.52,H,{z:1.05});c.restore();
+  mono(c,x.label||'Limited offer',70,140,{color:p.fg,size:22,maxW:440});T(c,x.price||x.headline,70,360,{font:AN,size:fit(c,x.price||x.headline||'',AN,400,W*.48-110,190),color:p.fg});
+  T(c,x.headline,70,470,{font:IT,weight:700,size:52,color:p.fg,maxW:W*.48-110,maxLines:4,lh:1.05});mono(c,feats(x).join('\n'),70,880,{color:p.fg,size:20,maxW:W*.48-110,upper:0,ls:1,maxLines:4});
+  c.fillStyle=p.fg;c.fillRect(70,H-200,W*.48-130,90);T(c,x.cta||'Shop now',70+(W*.48-130)/2,H-144,{font:IT,weight:700,size:30,align:'center',color:p.bg,upper:1,ls:3,maxW:W*.48-170,maxLines:1});mono(c,x.brand,70,H-70,{color:p.fg,size:18,maxW:440})}});
+
+/* ---- Lifestyle ---- */
+KP({id:'kc-p-polaroid',name:'Moments',fam:'Lifestyle',desc:'Instant photos scattered on linen with handwritten-style captions.',pal:{bg:'#E8E1D6',fg:'#2C2722',ac:'#B4553A'},tone:'light',tags:['Lifestyle','Memories'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();c.globalAlpha=.07;for(let i=0;i<H;i+=6){c.fillStyle=i%12?'#fff':'#000';c.fillRect(0,i,W,2)}c.restore();
+  const caps=[x.f1,x.f2,x.f3].filter(Boolean),pos=[[.33,.36,-.08],[.66,.42,.07],[.47,.64,-.02]];const n=Math.max(1,Math.min(3,S.n));
+  for(let i=0;i<3;i++){const[fx,fy,rot]=pos[i];c.save();c.translate(W*fx,H*fy);c.rotate(rot);c.scale(.8,.8);c.shadowColor='rgba(40,30,20,.28)';c.shadowBlur=40;c.shadowOffsetY=20;c.fillStyle='#FBF9F4';c.fillRect(-250,-290,500,600);c.shadowColor='transparent';
+    cover(c,S.m(i%n),-222,-262,444,444,{z:1.05+i*.15,fx:[.5,.4,.6][i],fy:[.4,.3,.6][i],filter:'contrast(1.02) saturate(.92) sepia(.08)'});T(c,caps[i]||x.brand,0,250,{font:IS,italic:1,size:40,align:'center',color:'#3a332c',maxW:430,maxLines:1});c.restore()}
+  T(c,x.brand,W/2,120,{font:IS,size:60,align:'center',color:p.fg,maxW:W-200,maxLines:1});T(c,x.headline,W/2,H-80,{font:IS,italic:1,size:50,align:'center',color:p.fg,maxW:W-180,maxLines:1})}});
+KP({id:'kc-p-journal',name:'The Journal',fam:'Lifestyle',desc:'A notebook page with a taped-in photo and a handwritten-style note.',pal:{bg:'#F3EEE4',fg:'#2D2A26',ac:'#7A8F6A'},tone:'light',tags:['Lifestyle','Story'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.strokeStyle=rgba(p.ac,.22);c.lineWidth=2;for(let y=180;y<H-60;y+=60){c.beginPath();c.moveTo(60,y);c.lineTo(W-60,y);c.stroke()}c.strokeStyle='rgba(192,57,43,.3)';c.beginPath();c.moveTo(140,60);c.lineTo(140,H-60);c.stroke();
+  mono(c,new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long'}),W-80,120,{align:'right',upper:0,color:rgba(p.fg,.6),size:22});
+  c.save();c.translate(W/2+20,500);c.rotate(-.03);c.shadowColor='rgba(0,0,0,.18)';c.shadowBlur=30;c.shadowOffsetY=12;c.fillStyle='#fff';c.fillRect(-320,-300,640,600);c.shadowColor='transparent';cover(c,S.m(0),-300,-280,600,560,{z:1.05});c.restore();
+  const tape=(x0,y0,r)=>{c.save();c.translate(x0,y0);c.rotate(r);c.fillStyle='rgba(232,220,190,.8)';c.fillRect(-80,-22,160,44);c.restore()};tape(W/2-250,205,-.4);tape(W/2+300,210,.35);
+  T(c,[x.headline,x.sub].filter(Boolean).join(' — ')||x.brand,170,945,{font:IS,italic:1,size:52,color:p.fg,maxW:W-260,maxLines:4,lh:1.15});T(c,'— '+(x.brand||''),W-90,H-90,{font:IS,italic:1,size:42,align:'right',color:p.ac,maxW:600,maxLines:1})}});
+KP({id:'kc-p-palette',name:'Colour Story',fam:'Lifestyle',desc:'The photo beside the four colours Kathavi reads from it, named and numbered.',pal:{bg:'#FAF8F4',fg:'#1C1B19',ac:'#1C1B19'},tone:'light',tags:['Lifestyle','Colour'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);const m=S.m(0),sw=swatches(m);c.save();clip(c,80,200,560,1000);cover(c,m,80,200,560,1000,{z:1.04});c.restore();
+  T(c,'Colour story',80,140,{font:IS,italic:1,size:64,color:p.fg});mono(c,x.brand,W-80,135,{align:'right',color:rgba(p.fg,.6),size:20,maxW:380});
+  sw.forEach((col,i)=>{const y=200+i*254;c.fillStyle=col;c.fillRect(680,y,320,200);mono(c,col.toUpperCase(),680,y+232,{size:18,color:p.fg,ls:1});T(c,[x.f1,x.f2,x.f3,x.label][i]||'',1000,y+234,{font:IS,size:26,align:'right',color:rgba(p.fg,.7),maxW:180,maxLines:1})});
+  T(c,x.headline,80,H-60,{font:IS,size:48,color:p.fg,maxW:W-160,maxLines:1})}});
+KP({id:'kc-p-review',name:'Love Note',fam:'Lifestyle',desc:'A five-star customer note as a soft card over the product photo.',pal:{bg:'#FFF8F2',fg:'#2A2420',ac:'#E2A72E'},tone:'light',tags:['Lifestyle','Social proof'],
+ r(c,t,S){const{W,H,p,x}=S;cover(c,S.m(0),0,0,W,H,{z:1.04});scrimT(c,W,H,.6,.3);const y0=640;c.save();c.shadowColor='rgba(0,0,0,.25)';c.shadowBlur=50;c.shadowOffsetY=20;c.fillStyle=p.bg;rr(c,70,y0,W-140,600,40);c.fill();c.restore();
+  for(let i=0;i<5;i++){c.save();c.translate(150+i*66,y0+100);c.beginPath();for(let k=0;k<10;k++){const ang=-Math.PI/2+k*Math.PI/5,rad=k%2?11:26;c.lineTo(Math.cos(ang)*rad,Math.sin(ang)*rad)}c.closePath();c.fillStyle=p.ac;c.fill();c.restore()}
+  T(c,'“'+(x.sub||'Exactly what I hoped for — and better in person.')+'”',130,y0+200,{font:IS,italic:1,size:52,color:p.fg,maxW:W-260,maxLines:4,lh:1.15});
+  mono(c,'Verified customer',130,y0+540,{color:rgba(p.fg,.6),size:18});T(c,x.brand,W-130,y0+544,{font:IS,size:34,align:'right',color:p.fg,maxW:420,maxLines:1});
+  T(c,x.headline,W/2,150,{font:IS,size:76,align:'center',color:'#fff',maxW:W-180,maxLines:2,shadow:'rgba(0,0,0,.45)',sb:30})}});
+KP({id:'kc-p-quiet',name:'Quiet Luxury',fam:'Lifestyle',desc:'Generous whitespace, a small photograph and one line of serif — the apothecary-calm post.',pal:{bg:'#F1EEE8',fg:'#2B2A27',ac:'#8C8279'},tone:'light',tags:['Lifestyle','Minimal'],
+ r(c,t,S){const{W,H,p,x}=S;c.fillStyle=p.bg;c.fillRect(0,0,W,H);c.save();clip(c,W/2-230,220,460,600);cover(c,S.m(0),W/2-230,220,460,600,{z:1.04});c.restore();
+  mono(c,x.brand,W/2,140,{align:'center',color:p.fg,size:20,ls:10,maxW:W-200});T(c,x.headline,W/2,960,{font:IS,size:64,align:'center',color:p.fg,maxW:W-240,maxLines:2});
+  T(c,x.sub,W/2,1110,{font:IT,size:26,align:'center',color:rgba(p.fg,.65),maxW:W-320,maxLines:2});mono(c,x.price||x.cta,W/2,H-100,{align:'center',color:p.ac,size:20,ls:6})}});
+
 /* ---------- library integration: Kathavi Collection leads the library ---------- */
 const kc=TPL.filter(t=>t.kc);for(const t of kc)TPL.splice(TPL.indexOf(t),1);TPL.splice(0,0,...kc);
 const fl=document.getElementById('filters');if(fl&&!fl.querySelector('[data-f=kc]')){const b=document.createElement('button');b.type='button';b.dataset.f='kc';b.setAttribute('aria-pressed','false');b.textContent='Kathavi Collection · '+kc.length;fl.prepend(b)}
-const _b=buildGrid;buildGrid=function(){const f=state.filter;if(f==='kc'){const keep=TPL.slice();TPL.splice(0,TPL.length,...keep.filter(t=>t.kc));try{state.filter='reel';_b()}finally{TPL.splice(0,TPL.length,...keep);state.filter=f}}else _b()};
+const _b=buildGrid;buildGrid=function(){const f=state.filter;if(f==='kc'){const keep=TPL.slice();TPL.splice(0,TPL.length,...keep.filter(t=>t.kc));try{state.filter='rec';_b()}finally{TPL.splice(0,TPL.length,...keep);state.filter=f}}else _b()};
 try{const n=TPL.length;document.querySelectorAll('.logo small,#paneT .ai p').forEach(el=>{el.textContent=el.textContent.replace(/\b1[2-9]\d\b/,String(n))})}catch(e){}
 const _sc=scoreAll;scoreAll=function(){_sc();TPL.forEach(t=>{if(t.kc&&state.scores[t.id]!=null)state.scores[t.id]=Math.min(98,Math.round(state.scores[t.id]*.9+8))})};
 window.KC_IDS=kc.map(t=>t.id);
