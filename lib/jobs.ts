@@ -4,7 +4,7 @@ import { falPoll, firstUrl, type FalJob } from "./fal";
 import { importUrl } from "./storage";
 import { refund } from "./credits";
 
-export async function createJob(c: Ctx, kind: string, provider: string, request: any, credits: number, chargeRef: string, status: "running" | "done" = "running", result: any = null) {
+export async function createJob(c: Ctx, kind: string, provider: string, request: any, credits: number, chargeRef: string, status: "queued" | "running" | "done" = "running", result: any = null) {
   const r = await c.sb.from("vx_jobs").insert({ workspace_id: c.ws, kind, provider, request, credits, charge_ref: chargeRef, status, result, created_by: c.user.id }).select("id").single();
   if (r.error) throw new Error(r.error.message);
   return r.data.id as string;
@@ -13,6 +13,7 @@ export async function createJob(c: Ctx, kind: string, provider: string, request:
 export async function advance(c: Ctx, id: string) {
   const j = (await c.sb.from("vx_jobs").select("*").eq("id", id).eq("workspace_id", c.ws).single()).data;
   if (!j) throw new Error("Job not found");
+  if (j.provider === "anthropic") return advanceAi(c, j);
   if (j.status !== "running") return j;
   let st: { state: "running" } | { state: "done"; data: any } | { state: "failed"; error: string };
   try {
@@ -34,4 +35,20 @@ export async function advance(c: Ctx, id: string) {
   const result = { url: saved.url, path: saved.path };
   await c.sb.from("vx_jobs").update({ status: "done", result, updated_at: new Date().toISOString() }).eq("id", id);
   return { ...j, status: "done", result };
+}
+
+/** AI jobs are answered by the worker on our server; here we only refund failures and give up on stalled jobs. */
+async function advanceAi(c: Ctx, j: any) {
+  const age = Date.now() - Date.parse(j.created_at);
+  if ((j.status === "queued" && age > 90_000) || (j.status === "running" && age > 300_000)) {
+    const error = "The AI service did not answer. You were not charged; try again.";
+    await c.sb.from("vx_jobs").update({ status: "failed", error, updated_at: new Date().toISOString() }).eq("id", j.id);
+    j = { ...j, status: "failed", error };
+  }
+  if (j.status === "failed" && !(j.result && j.result.refunded)) {
+    if (j.charge_ref) await refund(c, j.charge_ref);
+    await c.sb.from("vx_jobs").update({ result: { refunded: true } }).eq("id", j.id);
+    return { ...j, refunded: true };
+  }
+  return { ...j, refunded: !!(j.result && j.result.refunded) };
 }

@@ -23,7 +23,10 @@ function parseLoose(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)t
 
 /* ---- capabilities ---- */
 async function sampleCall(input,opts={}){await me();const images=[];for(const bl of (opts.images||[]).slice(0,6)){if(bl&&bl.size)images.push({media_type:bl.type||'image/jpeg',data:await b64(bl)})}
-  const r=await api('/api/ai',{json:{input,opts:{modelTier:opts.modelTier},action:opts.action,images}});if(r.balance!=null){window.VX_BAL=r.balance;try{VIRALOS.paintCredits()}catch(e){}}
+  let r=await api('/api/ai',{json:{input,opts:{modelTier:opts.modelTier},action:opts.action,images}});
+  /* long calls are queued on our server: wait for the answer (up to 5 minutes) */
+  if(r.job){const t0=Date.now();let wait=1200;for(;;){await new Promise(x=>setTimeout(x,wait));wait=Math.min(3000,wait+300);const j=await api('/api/jobs/'+r.job);if(j.status==='done'&&j.result){r={...r,text:j.result.text||'',truncated:!!j.result.truncated};break}
+    if(j.status==='failed')throw{code:'provider_error',message:(j.error||'The AI service did not answer.')+(j.refunded?' Your credits were refunded.':''),status:500};if(Date.now()-t0>330000)throw{code:'timeout',message:'The AI took too long to answer.'}}}if(r.balance!=null){window.VX_BAL=r.balance;try{VIRALOS.paintCredits()}catch(e){}}
   if(opts.onText)try{opts.onText({text:r.text,delta:r.text})}catch(e){}return{text:r.text,truncated:!!r.truncated}}
 const sample=Object.assign((i,o)=>sampleCall(i,o),{json:async(i,o)=>parseLoose((await sampleCall(i,o)).text),limits:async()=>({images:true})});
 const db={collection(){return{
