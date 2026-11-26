@@ -5,6 +5,9 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC = ["/", "/login", "/auth", "/legal", "/pricing", "/media"];
 
 export async function middleware(req: NextRequest) {
+  // one address, one sign-in: www.kathavi.com goes to kathavi.com
+  const host = req.headers.get("host") || "";
+  if (host.startsWith("www.")) { const u = req.nextUrl.clone(); u.host = host.slice(4); u.port = ""; u.protocol = "https:"; return NextResponse.redirect(u, 308); }
   let res = NextResponse.next({ request: req });
   const sb = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
