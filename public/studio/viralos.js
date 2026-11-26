@@ -52,7 +52,10 @@ function paintCredits(){const el=q('#vxCredit');if(!el)return;if(window.VX_HOSTE
 
 /* ============ Claude ============ */
 let AIP=null;function aiNs(){if(!AIP)AIP=(window.claude&&claude.use)?withTimeout(claude.use('sample'),12000).catch(()=>null):Promise.resolve(null);return AIP}
-function parseLoose(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw{code:'bad_json',message:'Claude returned no JSON'};return JSON.parse(t.slice(a,b+1))}
+function parseLoose(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw{code:'bad_json',message:'Claude returned no JSON'};const s=t.slice(a,b+1);try{return JSON.parse(s)}catch(e){
+ /* models sometimes put raw line breaks or tabs inside strings, or leave a trailing comma: repair those before giving up */
+ let o='',q=false,esc=false;for(const ch of s){if(q){if(esc){esc=false;o+=ch;continue}if(ch==='\\'){esc=true;o+=ch;continue}if(ch==='"'){q=false;o+=ch;continue}if(ch==='\n'){o+='\\n';continue}if(ch==='\r')continue;if(ch==='\t'){o+='\\t';continue}o+=ch}else{if(ch==='"')q=true;o+=ch}}
+ o=o.replace(/,\s*([}\]])/g,'$1');try{return JSON.parse(o)}catch(e2){throw{code:'bad_json',message:'Claude returned no JSON'}}}}
 async function askJSON(action,input,opts={}){const s=await aiNs();if(!s)throw{code:'no_ai'};
   const o={modelTier:opts.tier||'default',cache:false,action};let v;
   try{v=await s.json(input,o)}catch(e){/* only retry an unreadable answer; a server or timeout error would charge again for nothing */if(e&&(['not_granted','rate_limited','no_ai','timeout','provider_error','insufficient_credits','unauthenticated'].includes(e.code)||e.status>=500))throw e;const r=await s(input,o);v=parseLoose(r.text||'')}

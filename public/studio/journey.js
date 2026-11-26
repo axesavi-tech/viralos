@@ -203,12 +203,15 @@ function coerce(f,v){if(v==null)return null;
 const DOMAIN_RX=/(?:https?:\/\/)?(?<![@\w.])((?:[a-z0-9-]+\.)+(?:com|in|co|net|org|store|shop|io|app|co\.in|studio|design|fashion|art|me|xyz))(\/[^\s,;]*)?/i;
 async function siteFor(b,d){const g=G(b);const src=[g.inputs[d.id]||'',g.idea||'',b.website||''].join(' ');const m=src.match(DOMAIN_RX);if(!m||!window.VX||!VX.api)return null;
  const url=m[1].toLowerCase()+(m[2]||'');const c=(g.sites||{})[url];if(c&&Date.now()-c.at<7*864e5)return c;
- try{const r=await VX.api('/api/web/read',{json:{url}});const text=(r.pages||[]).map(p=>`# ${p.title||p.url}\n${String(p.text||'').slice(0,2500)}`).join('\n\n').slice(0,7000);
+ try{const r=await VX.api('/api/web/read',{json:{url}});const clean=x=>String(x||'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/g,' ').replace(/[\uD800-\uDFFF]/g,'');const text=clean((r.pages||[]).map(p=>`# ${p.title||p.url}\n${String(p.text||'').slice(0,2500)}`).join('\n\n')).slice(0,7000);
   const site={url,at:Date.now(),title:r.title||'',desc:r.description||'',colors:(r.colors||[]).slice(0,6),text};g.sites={...(g.sites||{}),[url]:site};Store.put(b);return site}
  catch(e){return{url,at:0,error:e&&e.message||'Could not read that website'}}}
 async function recommend(d,only){const b=brand();if(!b)return;const g=G(b);BUSY[d.id]=only||'all';rerender();
  try{const site=await siteFor(b,d);
-  const v=await askJSON('journey',prompt(b,d,only)+(site&&site.text?`\nWEBSITE ${site.url}, READ LIVE JUST NOW (use its real facts, words, products and tone; never claim anything it does not say):\nTitle: ${site.title}\nDescription: ${site.desc}\nColours seen: ${(site.colors||[]).join(', ')}\n${site.text}`:site&&site.error?`\nThe owner mentioned ${site.url} but it could not be read (${site.error}). Say so in your note.`:''),{tier:'default'});const out=v.fields||{};
+  const full=prompt(b,d,only)+(site&&site.text?`\nWEBSITE ${site.url}, READ LIVE JUST NOW (use its real facts, words, products and tone; never claim anything it does not say):\nTitle: ${site.title}\nDescription: ${site.desc}\nColours seen: ${(site.colors||[]).join(', ')}\n${site.text}`:site&&site.error?`\nThe owner mentioned ${site.url} but it could not be read (${site.error}). Say so in your note.`:'');
+  /* a step that runs past the time limit is refunded; ask the faster model once instead of failing */
+  let v;try{v=await askJSON('journey',full,{tier:'default'})}catch(e){if(e&&e.code==='timeout'){notify('That took too long, so a faster specialist model is finishing it.');v=await askJSON('journey',full,{tier:'quick'})}else throw e}
+  const out=v.fields||{};
   (only?d.F.filter(f=>f.k===only):d.F).forEach(f=>{const r=out[f.k];if(!r)return;const key=fk(d,f),cur=g.f[key]||{};if(decided(cur)&&!only)return;
    const val=coerce(f,r.value);if(val==null||(Array.isArray(val)&&!val.length))return;
    g.f[key]={...cur,value:val,status:'proposed',by:'ai',sp:d.sp,why:String(r.why||'').slice(0,300),alts:(Array.isArray(r.alternatives)?r.alternatives:[]).map(a=>coerce(f,a)).filter(a=>a!=null&&(!Array.isArray(a)||a.length)).slice(0,3),at:Date.now()}});
@@ -326,7 +329,8 @@ V.FORM.jstart=async f=>{const fd=new FormData(f);const idea=String(fd.get('idea'
  for(const d of STAGES[0].D)await recommend(d)};
 
 /* every studio prompt (campaigns, copy, ads, calendar) reads the Genome through brandBrief */
-window.KATHAVI_GENOME=b=>b&&b.genome?genomeText(b,80).replace('(no decisions yet)',''):'';
+/* kept short: every studio prompt carries it, and long prompts are slower and costlier */
+window.KATHAVI_GENOME=b=>{if(!b||!b.genome)return'';const lines=[];ALL_D.forEach(d=>d.F.forEach(f=>{if(f.sync&&f.sync.startsWith('dna.'))return;const v=valOf(b,fk(d,f));if(v!=null)lines.push(`${f.l}: ${show(f,v).slice(0,220)}`)}));return lines.join('\n').slice(0,6000)};
 
 /* ---------------- navigation ---------------- */
 Object.assign(ICON,{discover:'M11 4a7 7 0 100 14 7 7 0 000-14zM21 21l-4.3-4.3',define:'M4 4h16v4H4zM4 10h10v4H4zM4 16h13v4H4z',design:'M12 3a9 9 0 100 18c1 0 1.5-.6 1.5-1.4 0-.9-.7-1.3-.7-2.1 0-.8.6-1.5 1.5-1.5H16a5 5 0 005-5c0-4.4-4-8-9-8zM7.5 11.5h.01M10.5 7.5h.01M15 8h.01',
