@@ -17,5 +17,5 @@ await build({
 const v = Date.now().toString(36);
 const shell = fs.readFileSync(path.join(here, 'src/studio/shell.html'), 'utf8').replace('<script>/*APP*/</script>', `<script src="app.js?v=${v}"></script>`);
 fs.writeFileSync(path.join(out, 'index.html'), shell);
-for (const dir of ['fonts', 'samples']) fs.cpSync(path.join(here, 'public', dir), path.join(out, dir), {recursive: true});
+for (const dir of ['fonts', 'samples', 'themes']) fs.cpSync(path.join(here, 'public', dir), path.join(out, dir), {recursive: true});
 console.log('Reel Studio built into', path.relative(process.cwd(), out));

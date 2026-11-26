@@ -451,3 +451,24 @@ a.vx-btn[target=_blank]::after{content:'↗';margin-left:2px}
 :root[data-theme=dark] .vx-nav[aria-current=page]{background:var(--vx-lime);color:var(--vx-lime-ink)}
 :root[data-theme=dark] .vx-nav[aria-current=page] svg{color:var(--vx-lime-ink);stroke:var(--vx-lime-ink)}
 :root[data-theme=dark] .vx-btn.pri:not(.sm)::after{background:var(--vx-lime-ink);color:var(--vx-lime)}
+
+/* ---- UX round 1 fixes (26 Nov 2026) ---- */
+.vx-btn.vx-danger{color:#B3261E;border-color:rgba(179,38,30,.45)}
+.vx-btn.vx-danger:hover{background:rgba(179,38,30,.08)}
+details.vx-more-strat{margin-top:8px;border-top:1px solid var(--vx-line);padding-top:6px}
+details.vx-more-strat>summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;align-items:center;list-style:none}
+details.vx-more-strat>summary::before{content:'+';display:inline-grid;place-items:center;width:22px;height:22px;margin-right:10px;border-radius:999px;border:1px solid var(--vx-line)}
+details.vx-more-strat[open]>summary::before{content:'–'}
+textarea[data-dna]{field-sizing:content;overflow:hidden;resize:vertical;min-height:64px}
+.vx-rail .vx-more{display:none}
+@media(max-width:760px){
+  .vx-rail{overflow-x:visible;justify-content:space-around}
+  .vx-rail .vx-nav:not([data-m]):not(.vx-more){display:none}
+  .vx-rail .vx-nav{flex:1 1 0;min-width:0}
+  .vx-rail .vx-more{display:flex}
+  .vx-rail.more-open{position:fixed;left:0;right:0;bottom:0;z-index:60;flex-wrap:wrap;align-content:flex-start;max-height:80vh;overflow-y:auto;background:var(--vx-panel);box-shadow:0 -20px 60px rgba(0,0,0,.25);padding:14px 10px calc(14px + env(safe-area-inset-bottom));border-radius:18px 18px 0 0}
+  .vx-rail.more-open .vx-nav{display:flex;flex:0 0 calc(25% - 4px);min-height:64px}
+  form.vx-cmd{flex-direction:column;align-items:stretch}
+  form.vx-cmd textarea{min-height:104px;width:100%}
+  form.vx-cmd button{width:100%;justify-content:center;min-height:48px}
+}

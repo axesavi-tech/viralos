@@ -11,7 +11,7 @@ const plans: [string, string, string, string?][] = [
 const studios: [string, string, string][] = [
   ["Brand DNA", "Voice · colours · claims", "Reads your site and materials once, then keeps every asset on-voice, on-palette and honest."],
   ["Campaigns", "30 days · 3 directions", "Strategy, live market research and a full calendar, checked against each platform's rules."],
-  ["Reels & posts", "144 templates · your logo", "Editorial templates that carry your brand, not ours. Your photos stay exactly as shot."],
+  ["Reels & posts", "544 templates · 13 motion themes", "Editorial templates that carry your brand, not ours. Your photos stay exactly as shot."],
   ["Voice & video", "Cloned voice · AI scenes", "Narrate in your own voice, with consent, and turn product stills into moving scenes."],
   ["Publish & ads", "Instagram · Meta", "Post approved work and build ads that stay paused until you switch them on."],
   ["Your store", "Shopify · WooCommerce · more", "Pull in your catalogue from any platform and send approved product copy back."],
@@ -31,7 +31,7 @@ export default function Home() {
         <div className="links"><a href="#studios">Studios</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><Link href="/login" className="signin">Sign in</Link><Link href="/login?mode=signup" className="btn pri pill arrow">Start free</Link></div></nav>
 
       <header className="hero">
-        <div className="stack" aria-hidden="true"><span /><span /><span>Reel</span></div>
+        <figure className="hero-reel"><video src="/media/hero-reel.mp4" poster="/media/hero-reel.jpg" autoPlay muted loop playsInline preload="metadata" aria-label="A sample reel made in Kathavi for Iraaya, a handloom saree brand" /><figcaption>Made in Kathavi · Iraaya</figcaption></figure>
         <p className="eyebrow">An AI creative department for brands that sell</p>
         <h1>Content that <em>looks</em><span className="l2">like you paid</span><span className="l3">an agency.</span></h1>
         <div className="side"><span />
