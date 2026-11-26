@@ -75,7 +75,7 @@ const App: React.FC = () => {
   const player = useRef<PlayerRef>(null);
   const [vh, setVh] = useState(() => window.innerHeight);
   useEffect(() => { const f = () => setVh(window.innerHeight); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
-  const ph = Math.max(480, Math.min(vh - (EMBED ? 90 : 150), Math.round((window.innerWidth < 1050 ? Math.min(420, window.innerWidth - 40) : 9999) * 16 / 9)));
+  const ph = Math.max(480, Math.min(vh - (EMBED ? 90 : 150), Math.round((window.innerWidth < 1050 ? Math.min(320, window.innerWidth - 40) : 9999) * 16 / 9)));
   const pw = Math.round(ph * 9 / 16);
 
   // Receive the customer's brand from the Kathavi studio around this page.
