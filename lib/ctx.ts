@@ -1,5 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { supabaseServer } from "./supabase/server";
 
 export type Ctx = { sb: Awaited<ReturnType<typeof supabaseServer>>; user: { id: string; email?: string }; ws: string; role: string };
@@ -28,15 +29,47 @@ export async function ctx(req?: Request): Promise<Ctx> {
  * retry once, then answer 503 so the studio keeps the person signed in instead of sending them to the login page.
  */
 export async function currentUser(sb: Awaited<ReturnType<typeof supabaseServer>>) {
+  // With the project's JWT secret configured, check the session token here (signature, expiry, audience):
+  // no round trip to the sign-in server, so its brief outages no longer reach the studio.
+  const secret = process.env.SUPABASE_JWT_SECRET;
+  if (secret) {
+    try {
+      const { data } = await sb.auth.getSession();
+      const u = data.session?.access_token ? verifyHS256(data.session.access_token, secret) : null;
+      if (u) return u;
+    } catch { /* fall through to the sign-in server */ }
+  }
+  let last: any = null;
   for (let i = 0; i < 2; i++) {
     const { data, error } = await sb.auth.getUser();
     if (data.user) return data.user;
     const st = (error as any)?.status;
     const transient = !!error && (!st || st >= 500 || /fetch|network|timeout|ECONN|socket/i.test(error.message || ""));
     if (!transient) return null;
+    last = error;
     if (i === 0) await new Promise((r) => setTimeout(r, 400));
   }
-  throw new HttpError(503, "The sign-in service did not answer. Try again in a moment; you are still signed in.", "auth_unavailable");
+  // say what failed (no tokens or secrets), so the next outage can be traced from the logs or the browser
+  const cause = last?.cause?.code || last?.cause?.message || "";
+  console.error("[auth_unavailable]", last?.name || "", last?.status ?? "", String(last?.message || "").slice(0, 200), cause);
+  const e = new HttpError(503, "The sign-in service did not answer. Try again in a moment; you are still signed in.", "auth_unavailable");
+  (e as any).detail = [last?.name, last?.status, String(last?.message || "").slice(0, 120), cause].filter(Boolean).join(" · ");
+  throw e;
+}
+
+/** HS256 session token check (the self-hosted Supabase default). Returns the user, or null when anything is off. */
+function verifyHS256(token: string, secret: string): { id: string; email?: string } | null {
+  const [h, p, sig] = token.split(".");
+  if (!h || !p || !sig) return null;
+  const head = JSON.parse(Buffer.from(h, "base64url").toString());
+  if (head.alg !== "HS256") return null;
+  const want = createHmac("sha256", secret).update(h + "." + p).digest();
+  const got = Buffer.from(sig, "base64url");
+  if (got.length !== want.length || !timingSafeEqual(got, want)) return null;
+  const c = JSON.parse(Buffer.from(p, "base64url").toString());
+  if (!c.sub || c.role !== "authenticated" || (c.aud && c.aud !== "authenticated" && !(Array.isArray(c.aud) && c.aud.includes("authenticated")))) return null;
+  if (!c.exp || c.exp * 1000 < Date.now() - 5000) return null;
+  return { id: c.sub, email: c.email };
 }
 
 export const canWrite = (c: Ctx) => !["viewer", "analyst"].includes(c.role);
@@ -54,7 +87,7 @@ export function route<T extends any[]>(fn: (...a: T) => Promise<Response>) {
       const code = e?.code || (/insufficient_credits/.test(msg) ? "insufficient_credits" : status === 403 ? "forbidden" : "error");
       const message = code === "insufficient_credits" ? "Not enough credits. Top up in Settings → Billing." : msg.slice(0, 400);
       if (status >= 500) console.error("[viralos]", msg);
-      return NextResponse.json({ error: message, code }, { status });
+      return NextResponse.json({ error: message, code, ...(e?.detail ? { detail: e.detail } : {}) }, { status });
     }
   };
 }

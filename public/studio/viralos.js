@@ -20,11 +20,18 @@ const CHANNELS=['Instagram','Facebook','LinkedIn','YouTube','TikTok','Pinterest'
 /* ============ Storage: private per-user db, browser fallback ============ */
 const Store={mode:'local',db:null,uid:null,docs:new Map(),timers:{},chain:{},assets:null,dl:null,tts:null,
   async init(){
-    try{if(window.claude&&claude.use){const [db,user,assets,dl,tts]=await withTimeout(Promise.all(['db','user','assets','downloads','tts'].map(n=>claude.use(n).catch(()=>null))),12000);
-      this.assets=assets;this.dl=dl;this.tts=tts;
-      if(db&&user){const u=await user.id();if(u){this.db=db;this.uid=u;this.mode='cloud'}}}}catch(e){}
-    if(this.mode==='cloud'){try{const snap=await withTimeout(this.db.collection('data/users/'+this.uid).get(),10000);snap.docs.forEach(d=>this.docs.set(d.id,JSON.parse(JSON.stringify(d.data()))))}
-      catch(e){this.mode='local';this.err=true}}
+    /* signed in on Kathavi: your work lives in your account. If the account cannot be reached, keep trying and say so;
+       never fall back to an empty browser copy, which looked like a lost brand and saved new work in the wrong place */
+    const account=!!(window.claude&&claude.use&&window.VX);
+    for(let i=0;i<5;i++){try{
+      if(window.claude&&claude.use){const [db,user,assets,dl,tts]=await withTimeout(Promise.all(['db','user','assets','downloads','tts'].map(n=>claude.use(n).catch(()=>null))),12000);
+        this.assets=assets;this.dl=dl;this.tts=tts;
+        if(db&&user){const u=await user.id();if(u){this.db=db;this.uid=u;this.mode='cloud'}}
+        if(account&&this.mode!=='cloud')throw{code:'unreachable'}}
+      if(this.mode==='cloud'){const snap=await withTimeout(this.db.collection('data/users/'+this.uid).get(),15000);this.docs.clear();snap.docs.forEach(d=>this.docs.set(d.id,JSON.parse(JSON.stringify(d.data()))))}
+      this.err=false;break}
+     catch(e){this.err=true;this.mode='local';if(!account||(e&&e.code==='unauthenticated'))break;if(i<4){notify('Reconnecting to your account…');await new Promise(r=>setTimeout(r,2000*2**i))}}}
+    if(this.err&&account){this.mode='offline';return}
     if(this.mode==='local'){try{const s=JSON.parse(localStorage.getItem('viralos.v1')||'{}');Object.entries(s).forEach(([k,v])=>this.docs.set(k,v))}catch(e){}}
   },
   all(type){return[...this.docs.values()].filter(d=>d.type===type)},
@@ -37,6 +44,7 @@ const Store={mode:'local',db:null,uid:null,docs:new Map(),timers:{},chain:{},ass
         if(e&&e.code==='quota_exceeded'){notify('Storage is full. Delete an old campaign to save new work.');return}
         this.failed=this.failed||{};const n=(this.failed[k]||0)+1;this.failed[k]=n;if(e&&e.code==='unauthenticated')return;
         notify(n<5?'Could not save your latest change. Retrying…':'Your latest changes are not saved. Check your connection; Kathavi keeps retrying.');setTimeout(()=>{if(this.failed[k])this.flush(k)},Math.min(60000,3000*2**n))});}
+    else if(this.mode==='offline'){notify('Not saved: your account is not reachable. Reload when your connection is back.')}
     else{try{localStorage.setItem('viralos.v1',JSON.stringify(Object.fromEntries(this.docs)))}catch(e){notify('This browser could not save. Export a backup from Settings.')}}},
   del(k){this.docs.delete(k);clearTimeout(this.timers[k]);this.flush(k)}
 };
@@ -786,7 +794,9 @@ function applyTheme(){const t=pref.get('theme','system');if(t==='system')delete 
 
 /* ============ Boot ============ */
 async function boot(){applyTheme();buildNav();bind();paintCredits();const start=location.hash.slice(1)||'home';go(start);
-  await Store.init();paintCredits();const b=brand();if(b){setBrand(b);restoreMedia()}
+  await Store.init();paintCredits();
+  if(Store.mode==='offline'){const box=document.createElement('div');box.className='vx-card vx-offline';box.setAttribute('role','alert');box.innerHTML='<h2>We could not reach your account</h2><p class="vx-muted">Your brands and campaigns are safe on Kathavi. The connection to your account did not answer for about a minute. Try again in a moment.</p><button class="vx-btn pri" type="button" onclick="location.reload()">Try again</button>';qa('.vx-view').forEach(x=>x.hidden=true);(q('.vx-main')||document.body).prepend(box);const sb=q('#vxStore');if(sb)sb.textContent='Not connected';return}
+  const b=brand();if(b){setBrand(b);restoreMedia()}
   const sb=q('#vxStore');if(sb)sb.textContent=Store.mode==='cloud'?'Saved to your account':'Saved in this browser';render(cur.view)}
 window.VIRALOS={dropField,Store,go,quality:(it)=>quality(it,brand()),slotPlan,runQA,exportZip,cur,VIEWS,AFTER,ACT,FORM,NAV,ICON,render,rerender,buildNav,head,chip,h,q,qa,list,words,fmtD,todayISO,addDays,brand,camp,camps,items,Session,notify,busy,done,FORMATS,tplFor,tplList,renderItemImages,renderStill,withCopy,copyFor,vidScenes,saveBlob,paintCredits,rate,copyText,needBrand,needCamp,campPicker,brandBrief,askJSON,errText,setLength,confirmBox};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();

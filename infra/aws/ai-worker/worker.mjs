@@ -39,7 +39,7 @@ async function callClaude(req) {
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j?.error?.message || `Claude returned ${r.status}`);
     const blocks = (j.content || []).filter((b) => b.type === "text");
-    const text = blocks.map((b) => b.text).join("");
+    const text = blocks.map((b) => b.text).join("").replace(/<\/?cite\b[^>]*>/gi, "");
     // web research: keep the pages Claude cited so the studio can show its sources
     const sources = new Map();
     const keep = (url, title) => { if (url && /^https:\/\//.test(url) && !sources.has(url)) sources.set(url, { url, title: title || url }); };
