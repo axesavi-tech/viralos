@@ -1,0 +1,21 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 22 && nvm use 22
+        - npm ci
+    build:
+      commands:
+        # Amplify does not pass console environment variables to the running server by default;
+        # write the ones Kathavi needs into .env.production at build time.
+        - env | grep -E '^(NEXT_PUBLIC_|ANTHROPIC_|GEMINI_|FAL_|RUNWAYML_|ELEVENLABS_|RAZORPAY_|STRIPE_|META_|SHOPIFY_|VX_)' >> .env.production || true
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
