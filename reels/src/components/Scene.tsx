@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, useCurrentFrame} from 'remotion';
+import {AbsoluteFill, Sequence, useCurrentFrame} from 'remotion';
 import {AnimatedText} from './Text';
 import {MediaBox} from './Media';
 import {alpha, mix} from '../engine/color';
@@ -428,10 +428,40 @@ const Floor: React.FC<{c: SceneCtx}> = ({c}) => {
   );
 };
 
+/**
+ * Gallery montage: the customer's extra photos and clips, cut on the beat inside one scene.
+ * Each item is shown through the theme's own single-photo layout, so the montage keeps the template's look.
+ */
+const SINGLE: LayoutId[] = ['fullBleed', 'framed', 'split', 'magazine', 'arch', 'floating', 'filmFrame', 'lowerThird', 'swissGrid', 'sticker', 'noir', 'floor'];
+const Montage: React.FC<{c: SceneCtx}> = ({c}) => {
+  const f = useCurrentFrame();
+  const items = c.scene.media.length ? c.scene.media : [0];
+  const base = ([...(c.theme.layouts.hook ?? []), ...(c.theme.layouts.product ?? []), ...(c.theme.layouts.feature ?? []), ...c.theme.layouts.default] as LayoutId[]).find((l) => SINGLE.includes(l)) ?? 'fullBleed';
+  const L = LAYOUTS[base] ?? FullBleed;
+  const each = c.dur / items.length;
+  const X = Math.min(8, Math.round(each / 4)); // short cross-fade between items
+  return (
+    <AbsoluteFill>
+      {items.map((mi, i) => {
+        const from = Math.round(i * each);
+        const len = Math.round((i + 1) * each) - from + (i < items.length - 1 ? X : 0);
+        const local = f - from;
+        const op = i === 0 ? 1 : Math.min(1, Math.max(0, local / Math.max(1, X)));
+        const sub: SceneCtx = {...c, dur: len, index: c.index + i, scene: {...c.scene, media: [mi], eyebrow: undefined, title: undefined, body: undefined, mediaAnim: c.theme.motion.media[(c.index + i) % c.theme.motion.media.length]}};
+        return (
+          <Sequence key={i} from={from} durationInFrames={len} layout="none">
+            <AbsoluteFill style={{opacity: op}}><L c={sub} /></AbsoluteFill>
+          </Sequence>
+        );
+      })}
+    </AbsoluteFill>
+  );
+};
+
 export const LAYOUTS: Record<LayoutId, React.FC<{c: SceneCtx}>> = {
   fullBleed: FullBleed, framed: Framed, split: Split, magazine: Magazine, collage: Collage, arch: Arch, typeOnly: TypeOnly,
   floating: Floating, filmFrame: FilmFrame, lowerThird: LowerThird, swissGrid: SwissGrid, sticker: Sticker, noir: Noir, cta: CtaScene, logo: LogoScene,
-  depthStack: DepthStack, cube: Cube, floor: Floor,
+  depthStack: DepthStack, cube: Cube, floor: Floor, montage: Montage,
 };
 
 export const SceneView: React.FC<{c: SceneCtx}> = ({c}) => {

@@ -18,6 +18,15 @@ The Remotion-based Instagram Reel theme and template engine, and the Reel Studio
 | Demo brands | `src/samples.ts` | Iraaya (own Shopify photos, loaded from its store), Kaapiyo, Ojasri, Dhaavo, Mittiko (Unsplash photos) |
 | QA | `scripts/qa.mjs`, `scripts/contrast.ts`, `scripts/blank.py` | See "Testing" |
 
+## Photos and video clips
+
+- A reel takes **up to 8 photos or video clips** (MP4, MOV, WEBM). The customer ticks which ones this reel uses and orders them; the first leads.
+- **Every ticked item gets screen time.** Story beats take what they need; whatever is left plays as a **Gallery montage** right after the hook, in groups of up to four, at least ~0.9 s each. The montage draws each item through the theme's own single-photo layout, so it keeps the template's look.
+- **Framing per item** (stored on the media, so it applies in every theme and every scene): drag to place the product (focus point), **zoom 1–3×**, **Fill the frame** or **Show whole product** (whole item over a soft blurred backdrop), and for clips **where the clip starts**. The theme's camera move runs on top of the customer's framing.
+- **Per-scene choice:** in the Scenes list, the thumbnail beside a scene opens a picker. Single-photo scenes swap their photo, multi-photo layouts change their lead, montages add or remove items. Choices are kept by scene id (`assign` in the brief).
+- Clips play muted and loop if shorter than their scene; a still frame (poster) is captured on upload and used in posts, carousels and thumbnails.
+- QA: `npm run media:qa` (325 plans: exact length, every ticked item shown) and `npm run media:render-qa` (renders mixed photo + clip reels in every theme).
+
 ## Posts, carousels and stories
 
 `src/posts/` builds static posts from the same brief and the same 13 themes, so a brand's posts match its reels.

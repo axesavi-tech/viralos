@@ -1,6 +1,6 @@
 import React from 'react';
-import {Img, interpolate, useCurrentFrame} from 'remotion';
-import type {Media} from '../engine/schema';
+import {Img, Loop, OffthreadVideo, interpolate, useCurrentFrame, useVideoConfig} from 'remotion';
+import {isVideo, type Media} from '../engine/schema';
 import type {MediaAnim} from '../engine/types';
 import {prog} from '../engine/motion';
 
@@ -15,11 +15,14 @@ type Props = {
   grade?: string;
   fallback?: string;
   seed?: number;
+  /** static output (posts, PNG export): show a video's poster frame instead of the clip */
+  still?: boolean;
 };
 
 /** A cropped image with focal-point preservation and a deterministic camera move. */
-export const MediaBox: React.FC<Props> = ({media, anim, dur, style, radius, clip, intensity = 1, grade, fallback = '#888', seed = 0}) => {
+export const MediaBox: React.FC<Props> = ({media, anim, dur, style, radius, clip, intensity = 1, grade, fallback = '#888', seed = 0, still}) => {
   const f = useCurrentFrame();
+  const {fps} = useVideoConfig();
   const t = Math.min(1, f / Math.max(1, dur));
   const k = intensity;
   let transform = '';
@@ -85,11 +88,33 @@ export const MediaBox: React.FC<Props> = ({media, anim, dur, style, radius, clip
   }
 
   const pos = media ? `${(media.focusX ?? 0.5) * 100}% ${(media.focusY ?? 0.5) * 100}%` : '50% 50%';
+  const zoom = media?.zoom ?? 1;
+  const contain = media?.fit === 'contain';
+  const video = isVideo(media);
+  const showClip = video && !(still && media?.poster);
+  const imgSrc = video ? media?.poster : media?.src;
+
+  // The layer that carries the photo or clip. `fit` decides fill vs whole-product; the customer's zoom and focus
+  // sit under the theme's camera move, so templates keep their motion and the product stays where they framed it.
+  const visual = (fitMode: 'cover' | 'contain', blur?: boolean): React.ReactNode => {
+    const st: React.CSSProperties = {width: '100%', height: '100%', objectFit: fitMode, objectPosition: pos, filter: blur ? `${grade ?? ''} blur(38px) saturate(1.1) brightness(0.92)` : grade};
+    if (showClip && !blur) {
+      const trim = Math.round((media!.trimStart ?? 0) * fps);
+      const clipFrames = media!.durationSec ? Math.max(1, Math.round(media!.durationSec * fps) - trim) : 0;
+      const v = <OffthreadVideo src={media!.src} muted trimBefore={trim || undefined} style={st} pauseWhenBuffering />;
+      return clipFrames ? <Loop durationInFrames={clipFrames} layout="none">{v}</Loop> : v;
+    }
+    return imgSrc ? <Img src={imgSrc} style={st} /> : null;
+  };
+
   return (
     <div style={{position: 'absolute', overflow: 'hidden', borderRadius: radius, clipPath: clip, background: fallback, ...style}}>
+      {media && contain && (imgSrc || !video) ? <div style={{position: 'absolute', inset: '-8%'}}>{visual('cover', true)}</div> : null}
       <div style={{position: 'absolute', inset: 0, ...extra}}>
         {media ? (
-          <Img src={media.src} style={{width: '100%', height: '100%', objectFit: 'cover', objectPosition: pos, transform, transformOrigin: pos, filter: grade}} />
+          <div style={{position: 'absolute', inset: 0, transform: zoom !== 1 ? `scale(${zoom})` : undefined, transformOrigin: pos}}>
+            <div style={{position: 'absolute', inset: 0, transform, transformOrigin: pos}}>{visual(contain ? 'contain' : 'cover')}</div>
+          </div>
         ) : null}
       </div>
       {overlay}

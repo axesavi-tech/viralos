@@ -17,10 +17,21 @@ export const MediaSchema = z.object({
   focusX: z.number().min(0).max(1).default(0.5),
   focusY: z.number().min(0).max(1).default(0.5),
   alt: z.string().optional(),
+  /** photo or video clip; detected from the file name when missing */
+  kind: z.enum(['image', 'video']).optional(),
+  /** customer framing: 1 = fill the frame, up to 3x closer */
+  zoom: z.number().min(1).max(3).optional(),
+  /** 'cover' fills the frame; 'contain' shows the whole product over a soft blurred backdrop */
+  fit: z.enum(['cover', 'contain']).optional(),
+  /** video only: start point and length in seconds, and a still frame for posts and thumbnails */
+  trimStart: z.number().min(0).optional(),
+  durationSec: z.number().positive().optional(),
+  poster: z.string().optional(),
 });
 export type Media = z.infer<typeof MediaSchema>;
+export const isVideo = (m?: {src: string; kind?: string}) => !!m && (m.kind ? m.kind === 'video' : /\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(m.src));
 
-export const SceneKind = z.enum(['hook', 'story', 'product', 'feature', 'detail', 'offer', 'cta', 'logo']);
+export const SceneKind = z.enum(['hook', 'story', 'product', 'feature', 'detail', 'offer', 'cta', 'logo', 'gallery']);
 export type SceneKind = z.infer<typeof SceneKind>;
 
 export const TransitionId = z.enum(['cut', 'dissolve', 'swipe', 'whip', 'filmBurn', 'paperTear', 'iris', 'shutter', 'blockWipe', 'pageTurn', 'cube', 'flip', 'zoomThrough']);
@@ -34,7 +45,7 @@ export const SceneSchema = z.object({
   title: z.string().max(90).optional(),
   body: z.string().max(160).optional(),
   /** index into spec.media */
-  media: z.array(z.number().int().min(0)).max(4).default([]),
+  media: z.array(z.number().int().min(0)).max(8).default([]),
   layout: z.string().optional(),
   textAnim: z.string().optional(),
   mediaAnim: z.string().optional(),
@@ -75,6 +86,8 @@ export const BriefSchema = z.object({
   cta: z.string().max(40).default('Shop now'),
   voiceover: z.string().max(900).optional(),
   media: z.array(MediaSchema).min(1).max(12),
+  /** customer's per-scene photo choices, keyed by scene id; overrides the automatic assignment */
+  assign: z.record(z.string(), z.array(z.number().int().min(0)).max(8)).optional(),
   intensity: z.number().min(0.4).max(1.6).default(1),
   showSafeZones: z.boolean().default(false),
 });
