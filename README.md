@@ -13,6 +13,15 @@ Kathavi is an AI content and marketing studio: brand profile, campaigns, reels, 
 
 The studio UI is in `public/studio/` and is served at `/app`. The API routes are in `app/api/`.
 
+## Reel Studio
+The reel engine lives in `reels/` (Remotion, React, TypeScript, its own `package.json`, kept out of the Next.js build). It has 13 motion themes (three of them 3D), a deterministic planner that turns a brief into a timed storyboard, and automated QA for text fit, colour contrast, blank frames and exact durations. Inside Kathavi it appears as **Reel Studio** in the studio menu: it reads the active brand's name, colours, handle, Brand Vault photos and first catalogue product, uploads new photos to the Brand Vault and saves reels to the workspace (`vx_docs`, type `reel`). Five demo brands (Iraaya, Kaapiyo, Ojasri, Dhaavo, Mittiko) let customers try it before setting up their own brand. MP4 export needs the render service planned for AWS. See `reels/docs/README.md`.
+
+```
+cd reels && npm ci
+npm test               # types, exact durations, colour contrast
+npm run studio:build   # rebuilds public/studio/reels/
+```
+
 ## Database
 Apply in order in the Supabase SQL editor (already applied to project `ilahbbmwdqvbugjtwcyj`):
 1. `supabase/migrations/001_viralos_core.sql`: replace `__VX_SERVER_SECRET_SHA256__` with `sha256(VX_SERVER_SECRET)` in hex. Only the hash is stored.
