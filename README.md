@@ -13,6 +13,20 @@ Kathavi is an AI content and marketing studio: brand profile, campaigns, reels, 
 
 The studio UI is in `public/studio/` and is served at `/app`. The API routes are in `app/api/`.
 
+## The brand journey (studio home)
+
+Kathavi is organised as a guided journey from idea to a learning brand, for physical, digital and service brands:
+
+1. **Discover**: idea brief, market snapshot, audience, competition
+2. **Define**: positioning, personality, name and tagline, voice, brand story
+3. **Design**: creative direction, visual identity, motion and sound
+4. **Create**: content pillars, first content
+5. **Experience**: storefront and profile, customer journey
+6. **Launch**: go-to-market plan, community and creators
+7. **Learn**: experiments, brand review
+
+Nine AI specialists (Market & Audience Analyst, Brand Strategist, Verbal Identity Strategist, Creative Director, Visual Designer, Story & Content Strategist, Film & Motion Director, Growth Marketer, Quality & Governance Lead), coordinated by a Chief Brand Architect, recommend every field with a reason and alternatives. The owner accepts, edits, rejects (and asks for another) or writes their own. Accepted decisions form the **Brand Genome** (ten DNA sections), which syncs into the brand profile and is added to every studio prompt, so campaigns, copy, ads and reels follow it. Code: `public/studio/journey.js`; studio tools stay available under "Studio tools".
+
 ## Reel Studio
 The reel engine lives in `reels/` (Remotion, React, TypeScript, its own `package.json`, kept out of the Next.js build). It has 13 motion themes (three of them 3D), a deterministic planner that turns a brief into a timed storyboard, and automated QA for text fit, colour contrast, blank frames and exact durations. Inside Kathavi it appears as **Reel Studio** in the studio menu: it reads the active brand's name, colours, handle, Brand Vault photos and first catalogue product, uploads new photos to the Brand Vault and saves reels to the workspace (`vx_docs`, type `reel`). Five demo brands (Iraaya, Kaapiyo, Ojasri, Dhaavo, Mittiko) let customers try it before setting up their own brand. MP4 export needs the render service planned for AWS. See `reels/docs/README.md`.
 

@@ -40,8 +40,8 @@ const Session={assets:new Map(),voices:new Map(),files:new Map()};
 const pref={get(k,d){try{return JSON.parse(localStorage.getItem('viralos.pref.'+k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem('viralos.pref.'+k,JSON.stringify(v))}catch(e){}}};
 
 /* ============ Credits & usage ============ */
-const RATE_DEF={dna:3,strategy:3,intel:2,directions:2,calendar:4,fix:1,regen:1,copy:1,ads:3,catalogue:2,advisor:2,command:1,scene:1};
-const RATE_LABEL={dna:'Brand DNA discovery',strategy:'Campaign strategy',intel:'Market & trend intelligence',directions:'Three creative directions',calendar:'Calendar batch (5 entries)',fix:'Fix one entry',regen:'Regenerate one entry',copy:'Copy variations',ads:'Ad kit',catalogue:'Catalogue batch (5 products)',advisor:'Growth advisor',command:'Command bar',scene:'Regenerate one scene'};
+const RATE_DEF={journey:2,dna:3,strategy:3,intel:2,directions:2,calendar:4,fix:1,regen:1,copy:1,ads:3,catalogue:2,advisor:2,command:1,scene:1};
+const RATE_LABEL={journey:'Specialist recommendation (one step)',dna:'Brand DNA discovery',strategy:'Campaign strategy',intel:'Market & trend intelligence',directions:'Three creative directions',calendar:'Calendar batch (5 entries)',fix:'Fix one entry',regen:'Regenerate one entry',copy:'Copy variations',ads:'Ad kit',catalogue:'Catalogue batch (5 products)',advisor:'Growth advisor',command:'Command bar',scene:'Regenerate one scene'};
 function settings(){let s=Store.get('settings');if(!s){s={id:'settings',type:'settings',rates:{...RATE_DEF},allowance:500};}s.rates={...RATE_DEF,...s.rates};return s}
 function rate(k){if(window.VX_RATES&&window.VX_RATES[k]!=null)return window.VX_RATES[k];return settings().rates[k]??1}
 function ledger(){return Store.get('ledger')||{id:'ledger',type:'ledger',months:{},recent:[]}}
@@ -147,7 +147,7 @@ function vpi(it){const F=[];const hk=String(it.hook||'');const add=(ok,pts,label
 function runQA(it){const b=brand();it.qa=quality(it,b);if(['Draft','Generated','Quality checked'].includes(it.status))it.status=it.qa.allOk?'Quality checked':'Generated';return it.qa}
 
 /* ============ Prompts for campaign generation ============ */
-function brandBrief(b){return`BRAND: ${b.name} ${b.handle||''} — ${b.industry}\n${b.desc}\nPRODUCTS: ${b.products}\nAUDIENCE: ${b.audience}\nBRAND DNA (approved=${!!b.approved}):\n${dnaText(b)}`}
+function brandBrief(b){const gx=window.KATHAVI_GENOME?window.KATHAVI_GENOME(b):'';return`BRAND: ${b.name} ${b.handle||''} — ${b.industry}\n${b.desc}\nPRODUCTS: ${b.products}\nAUDIENCE: ${b.audience}\nBRAND DNA (approved=${!!b.approved}):\n${dnaText(b)}${gx?'\nBRAND GENOME (decisions the owner accepted; follow them):\n'+gx:''}`}
 async function genStrategy(c,b){const v=await askJSON('strategy',`You are a world-class marketing strategist. Build the campaign strategy. Choose only the frameworks that fit this problem (STP, AIDA, PAS, Jobs to Be Done, customer journey, funnel, Hero-Hub-Help, content pillars, behavioural economics, ethical persuasion) and say why. Never invent market data, metrics or testimonials.
 ${brandBrief(b)}
 CAMPAIGN: ${c.name}. Objective: ${c.objective}. Duration ${c.duration} days from ${c.start}. Channels: ${c.channels.join(', ')}. Reel length: ${+c.reelLen>0?c.reelLen+' seconds':'mixed 15s and 30s'}. Content mix: ${Object.entries(c.mix).filter(([,n])=>n).map(([k,n])=>n+' '+k).join(', ')}.
@@ -201,10 +201,17 @@ Return ONLY JSON of the complete corrected entry, same shape: ${ITEM_SCHEMA}`);
 
 /* ============ Views ============ */
 const ICON={home:'M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z',brands:'M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z',campaigns:'M4 5h16M4 12h16M4 19h10',calendar:'M5 5h14v15H5zM5 10h14M9 3v4M15 3v4',studio:'M4 4h16v12H4zM8 20h8M12 16v4',images:'M4 5h16v14H4zM4 15l5-5 4 4 3-3 4 4',video:'M4 6h11v12H4zM15 10l5-3v10l-5-3',reels:'M4 4h16v16H4zM8 4v16M16 4v16M10.5 9.5l3 2.5-3 2.5z',more:'M5 12h.01M12 12h.01M19 12h.01',copy:'M5 4h10l4 4v12H5zM9 12h6M9 16h6',voice:'M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3zM5 11a7 7 0 0014 0M12 18v3',ads:'M4 10v4l10 5V5L4 10zM18 9a4 4 0 010 6',catalogue:'M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10',vault:'M5 4h14v16H5zM12 10a2 2 0 100 4 2 2 0 000-4z',analytics:'M4 20V10M10 20V4M16 20v-7M21 20H3',automations:'M4 12a8 8 0 0114-5l2-2v6h-6l2-2a5 5 0 10.5 6',account:'M12 8a4 4 0 100 8 4 4 0 000-8zM3 12h2M19 12h2M12 3v2M12 19v2'};
-const NAV=[['home','Home'],['brands','My Brands'],['campaigns','Campaigns'],['calendar','Content Calendar'],['studio','Creative Studio'],['images','Image Studio'],['video','Video Studio'],['reels','Reel Studio'],['copy','Copy Studio'],['voice','Voice Studio'],['ads','Ad Studio'],['catalogue','Product Catalogue'],['vault','Brand Vault'],['analytics','Analytics'],['automations','Automations'],['account','Settings']];
+const NAV=[['home','Journey','j'],['discover','Discover','s'],['define','Define','s'],['design','Design','s'],['create','Create','s'],['experience','Experience','s'],['launch','Launch','s'],['learn','Learn','s'],['genome','Brand Genome','j'],
+ ['today','Today','t'],['brands','My Brands','t'],['campaigns','Campaigns','t'],['calendar','Content Calendar','t'],['studio','Creative Studio','t'],['images','Image Studio','t'],['video','Video Studio','t'],['reels','Reel Studio','t'],['copy','Copy Studio','t'],['voice','Voice Studio','t'],['ads','Ad Studio','t'],['catalogue','Product Catalogue','t'],['vault','Brand Vault','t'],['analytics','Analytics','t'],['automations','Automations','t'],['account','Settings','x']];
 function svg(k){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[k]}"/></svg>`}
-function buildNav(){q('#vxNav').innerHTML=NAV.map(([k,l],i)=>(i===4||i===12?'<hr>':'')+`<button class="vx-nav" type="button" data-go="${k}"${['home','campaigns','calendar','reels'].includes(k)?' data-m="1"':''}>${svg(k)}<span>${l}</span></button>`).join('')+`<button class="vx-nav vx-more" type="button" data-act="navmore" aria-expanded="false">${svg('more')}<span>More</span></button>`}
-function go(v,opts){if(!NAV.some(n=>n[0]===v))v='home';cur.view=v;{const r=q('.vx-rail');if(r)r.classList.remove('more-open');const mb=q('.vx-more');if(mb)mb.setAttribute('aria-expanded','false')}qa('.vx-nav').forEach(b=>b.setAttribute('aria-current',b.dataset.go===v?'page':'false'));
+/* Navigation follows the brand journey: Journey, the seven stages, the Brand Genome, then the studio tools (folded away) and settings. */
+function buildNav(){const open=pref.get('navTools',false)||NAV.some(n=>n[2]==='t'&&n[0]===cur.view);const M=['home','create','genome','reels'];
+ const btn=([k,l,g],i)=>`<button class="vx-nav${g==='s'?' vx-stage':''}" type="button" data-go="${k}"${M.includes(k)?' data-m="1"':''}>${g==='s'?`<span class="vx-sn">${NAV.filter(n=>n[2]==='s').findIndex(n=>n[0]===k)+1}</span>`:svg(k)}<span>${l}</span></button>`;
+ const grp=g=>NAV.filter(n=>(n[2]||'x')===g);
+ q('#vxNav').innerHTML=btn(grp('j')[0])+`<div class="vx-navlab">Brand journey</div>`+grp('s').map(btn).join('')+btn(grp('j')[1])+'<hr>'+
+  `<button class="vx-nav vx-navtog" type="button" data-act="navtools" aria-expanded="${open}">${svg('more')}<span>Studio tools</span><b aria-hidden="true">${open?'–':'+'}</b></button><div class="vx-navgrp"${open?'':' hidden'}>${grp('t').map(btn).join('')}</div><hr>`+
+  grp('x').map(btn).join('')+`<button class="vx-nav vx-more" type="button" data-act="navmore" aria-expanded="false">${svg('more')}<span>More</span></button>`}
+function go(v,opts){if(!NAV.some(n=>n[0]===v))v='home';cur.view=v;if(NAV.some(n=>n[0]===v&&n[2]==='t')){const tg=q('.vx-navgrp'),tb=q('.vx-navtog');if(tg&&tg.hidden){tg.hidden=false;if(tb){tb.setAttribute('aria-expanded','true');tb.querySelector('b').textContent='–'}}}{const r=q('.vx-rail');if(r)r.classList.remove('more-open');const mb=q('.vx-more');if(mb)mb.setAttribute('aria-expanded','false')}qa('.vx-nav').forEach(b=>b.setAttribute('aria-current',b.dataset.go===v?'page':'false'));
   qa('.vx-view').forEach(s=>{const on=s.id==='view-'+v;s.hidden=!on;if(!on&&s.id!=='view-studio')s.innerHTML=''});if(location.hash!=='#'+v)history.replaceState(null,'','#'+v);
   if(v==='studio'){setTimeout(()=>{try{resize()}catch(e){}},30)}else render(v,opts);const el=q('#view-'+v);if(el)el.scrollTop=0}
 function render(v,opts){const f=VIEWS[v];if(!f)return;const el=q('#view-'+v);el.innerHTML=f(opts)||'';if(AFTER[v])AFTER[v](el,opts);el.querySelectorAll('textarea[data-dna]').forEach(fitTa)}
@@ -214,14 +221,14 @@ function rerender(){render(cur.view)}
 function done(stId,text){rerender();const s=q('#'+stId);if(s)s.textContent=text}
 const VIEWS={},AFTER={};
 function head(title,sub,right=''){return`<div class="vx-head"><div><h1>${title}</h1>${sub?`<p>${sub}</p>`:''}</div><div class="vx-row">${right}</div></div>`}
-function needBrand(){return`<div class="vx-card vx-empty vx-wrap"><h2>Start with your brand</h2><p>Kathavi builds every asset from your Brand DNA. It takes about a minute.</p><div class="vx-row" style="justify-content:center"><button class="vx-btn pri" data-act="go" data-v="brands" type="button">Set up my brand</button></div></div>`}
+function needBrand(){return`<div class="vx-card vx-empty vx-wrap"><h2>Start with your brand</h2><p>Describe your idea in a line and Kathavi\u2019s specialists build the brand with you, one decision at a time. Every studio then works from it.</p><div class="vx-row" style="justify-content:center"><button class="vx-btn pri" data-act="go" data-v="home" type="button">Start my brand</button><button class="vx-btn" data-act="go" data-v="brands" type="button">I already have Brand DNA</button></div></div>`}
 function needCamp(){return`<div class="vx-card vx-empty vx-wrap"><h2>No campaign yet</h2><p>Plan one and Kathavi will write the strategy, creative directions and the full calendar.</p><div class="vx-row" style="justify-content:center"><button class="vx-btn pri" data-act="newcamp" type="button">Plan a campaign</button></div></div>`}
 function campPicker(){const cs=camps();if(!cs.length)return'';const c=camp();return`<select data-act="pickcamp" aria-label="Campaign" style="width:auto;min-width:220px">${cs.map(x=>`<option value="${x.id}" ${c&&x.id===c.id?'selected':''}>${h(x.name)}${x.paused?' (paused)':''}</option>`).join('')}</select>`}
 function chip(t,cls=''){return`<span class="vx-chip ${cls}">${h(t)}</span>`}
 function scoreChip(s){return chip(s+'%',s>=100?'ok':s>=80?'warn':'bad')}
 
 /* ---- Home ---- */
-VIEWS.home=()=>{const b=brand(),c=camp(),its=items(c),u=monthUse(),s=settings();
+VIEWS.today=()=>{const b=brand(),c=camp(),its=items(c),u=monthUse(),s=settings();
   const appr=its.filter(i=>['Approved','Scheduled','Published','Analysed','Optimised'].includes(i.status)).length;
   const up=Store.all('item').filter(i=>i.date>=todayISO()&&!Store.get(i.campaignId)?.paused).sort((a,b2)=>a.date<b2.date?-1:1).slice(0,6);
   const next=[];if(!b)next.push(['Set up your Brand DNA','brands']);else{if(!b.dna)next.push(['Discover your Brand DNA','brands']);else if(!b.approved)next.push(['Review and approve your Brand DNA','brands']);
@@ -579,6 +586,7 @@ function confirmBox(title,text,label,fn){const m=q('#vxModal');m.innerHTML=`<div
 /* ============ Actions ============ */
 async function busy(stId,btn,fn){const st=q('#'+stId);if(btn)btn.disabled=true;try{await fn(st)}catch(e){console.error(e);if(st)st.textContent=errText(e);else notify(errText(e))}finally{if(btn&&document.contains(btn))btn.disabled=false}}
 const ACT={
+ navtools:a=>{const o=a.getAttribute('aria-expanded')!=='true';pref.set('navTools',o);a.setAttribute('aria-expanded',o);a.querySelector('b').textContent=o?'–':'+';const g=a.nextElementSibling;if(g)g.hidden=!o},
  go:el=>go(el.dataset.v),newcamp:()=>{cur.wiz=wizardSeed();go('campaigns')},cancelwiz:()=>{cur.wiz=null;rerender()},
  dellogo:()=>{const b=brand();b.vault.logo=null;Store.put(b);LOGO_KEY=null;syncLogo();rerender();notify('Logo removed')},
  example:()=>{cur.newBrand=newBrand(EXAMPLE_BRAND);rerender()},addbrand:()=>{cur.newBrand=newBrand();rerender()},editsrc:()=>{cur.newBrand=brand();rerender()},cancelbrand:()=>{cur.newBrand=null;rerender()},
