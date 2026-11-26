@@ -311,7 +311,9 @@ ACT.jalt=el=>{const b=brand(),s=G(b).f[el.dataset.key];if(!s)return;const a=(s.a
 ACT.jedit=el=>{cur.jedit=el.dataset.key;rerender();setTimeout(()=>{const t=q('#ed-'+CSS.escape(el.dataset.key));if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length)}},20)};
 ACT.jcancel=()=>{cur.jedit=null;rerender()};
 ACT.jnew=()=>{V.cur.jstart=true;go('home')};ACT.jback=()=>{V.cur.jstart=false;go('home')};
-ACT.jreopen=el=>{const b=brand(),s=G(b).f[el.dataset.key];if(!s)return;s.status='proposed';save(b);rerender()};
+ACT.jreopen=el=>{const b=brand(),s=G(b).f[el.dataset.key];if(!s)return;
+ /* your own answer stays yours: Change opens it for editing; an accepted suggestion goes back to being a suggestion with its alternatives */
+ if(s.status==='edited'){ACT.jedit(el);return}s.status='proposed';save(b);rerender()};
 ACT.jsave=el=>{const key=el.dataset.key,{d,f}=keyParts(key),t=q('#ed-'+CSS.escape(key));if(!t)return;const raw=t.value.trim();if(!raw){notify('Write something first, or cancel.');return}
  let v;if(f.t==='text')v=raw;else if(f.t==='list')v=list(raw);else if(f.t==='palette'){v=raw.split('\n').map(l=>{const m=l.match(/#[0-9a-f]{6}/i);return m?{hex:m[0].toUpperCase(),role:l.replace(m[0],'').trim().slice(0,30)}:null}).filter(Boolean);if(!v.length){notify('Use colours like #1E2A3A primary');return}}
  else{v=raw.split(/[\n,]/).map(x=>x.trim()).filter(x=>THEME_IDS.includes(x));if(!v.length){notify('Use theme ids from the list');return}}

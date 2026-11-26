@@ -32,10 +32,15 @@ const Store={mode:'local',db:null,uid:null,docs:new Map(),timers:{},chain:{},ass
   put(doc){doc.updated=Date.now();this.docs.set(doc.id,doc);clearTimeout(this.timers[doc.id]);this.timers[doc.id]=setTimeout(()=>this.flush(doc.id),500)},
   flush(k){const doc=this.docs.get(k);
     if(this.mode==='cloud'){const ref=this.db.collection('data/users/'+this.uid).doc(k);
-      this.chain[k]=(this.chain[k]||Promise.resolve()).then(()=>doc?ref.set(JSON.parse(JSON.stringify(doc))):ref.delete()).catch(e=>{if(e&&e.code==='quota_exceeded')notify('Storage is full. Delete an old campaign to save new work.')});}
+      this.chain[k]=(this.chain[k]||Promise.resolve()).then(()=>doc?ref.set(JSON.parse(JSON.stringify(doc))):ref.delete()).then(()=>{if(this.failed&&this.failed[k]){delete this.failed[k];if(!Object.keys(this.failed).length)notify('Saved.')}}).catch(e=>{
+        /* never lose work silently: say so, retry with back-off, and warn before leaving the page while anything is unsaved */
+        if(e&&e.code==='quota_exceeded'){notify('Storage is full. Delete an old campaign to save new work.');return}
+        this.failed=this.failed||{};const n=(this.failed[k]||0)+1;this.failed[k]=n;if(e&&e.code==='unauthenticated')return;
+        notify(n<5?'Could not save your latest change. Retrying…':'Your latest changes are not saved. Check your connection; Kathavi keeps retrying.');setTimeout(()=>{if(this.failed[k])this.flush(k)},Math.min(60000,3000*2**n))});}
     else{try{localStorage.setItem('viralos.v1',JSON.stringify(Object.fromEntries(this.docs)))}catch(e){notify('This browser could not save. Export a backup from Settings.')}}},
   del(k){this.docs.delete(k);clearTimeout(this.timers[k]);this.flush(k)}
 };
+addEventListener('beforeunload',e=>{if(Store.failed&&Object.keys(Store.failed).length){e.preventDefault();e.returnValue=''}});
 const Session={assets:new Map(),voices:new Map(),files:new Map()};
 const pref={get(k,d){try{return JSON.parse(localStorage.getItem('viralos.pref.'+k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem('viralos.pref.'+k,JSON.stringify(v))}catch(e){}}};
 
@@ -103,7 +108,7 @@ COMPETITORS NAMED BY THE USER: ${b.competitors}
 GUIDELINES: ${b.guidelines}
 ${Object.keys(keep).length?'LOCKED ATTRIBUTES (keep exactly, stay consistent with them): '+JSON.stringify(keep):''}
 Return ONLY JSON: {"dna":{"purpose":"","mission":"","vision":"","value_prop":"","positioning":"","pricing":"","personas":["Name — one-line description, problems, aspirations"],"problems":[""],"personality":"","tone":"","archetype":"","typography":"","visual_language":"","differentiators":[""],"competitive":"","emotional_triggers":[""],"approved_claims":["only claims supported by the material"],"restricted_words":["words/phrases the brand should avoid"],"cultural":[""],"pillars":["4-6 content pillars"],"cta_styles":[""]},"colors":{"primary":"#hex","secondary":"#hex","light":"#hex"},"sources":{"field":"provided|inferred"},"questions":["at most 3 essential questions for the owner"]}`;
-  const v=await askJSON('dna',prompt,{tier:'complex'});const d=v.dna||{};
+  const v=await askJSON('dna',prompt,{tier:'default'});const d=v.dna||{};
   b.dna={...(b.dna||{}),...d,...keep};b.src={...b.src,...(v.sources||{})};Object.keys(keep).forEach(k=>b.src[k]='locked');
   const ok=x=>/^#[0-9a-f]{6}$/i.test(x||'');if(v.colors){['primary','secondary','light'].forEach(k=>{if(ok(v.colors[k])&&!b.locked['colors'])b.colors[k]=v.colors[k]})}
   b.questions=list(v.questions).slice(0,3);b.approved=false;b.versions.push({at:Date.now(),dna:JSON.parse(JSON.stringify(b.dna)),note:onlyUnlocked?'Regenerated unlocked attributes':'Discovered'});b.versions=b.versions.slice(-12);Store.put(b)}
@@ -155,7 +160,7 @@ async function genStrategy(c,b){const v=await askJSON('strategy',`You are a worl
 ${brandBrief(b)}
 CAMPAIGN: ${c.name}. Objective: ${c.objective}. Duration ${c.duration} days from ${c.start}. Channels: ${c.channels.join(', ')}. Reel length: ${+c.reelLen>0?c.reelLen+' seconds':'mixed 15s and 30s'}. Content mix: ${Object.entries(c.mix).filter(([,n])=>n).map(([k,n])=>n+' '+k).join(', ')}.
 Creative thought from the owner: ${c.notes||'none'}
-Return ONLY JSON: {"summary":"2 sentences","frameworks":[{"name":"","why":""}],"audience":[{"segment":"","why":"","funnel":"Awareness|Consideration|Conversion|Retention"}],"proposition":"","creative_direction":"","key_messages":["4-6"],"pillars":["4-5 content pillars for this campaign"],"platform_strategy":[{"platform":"","role":"","formats":""}],"journey":["step"],"success_metrics":[{"metric":"","target":"suggested target, marked as a hypothesis","why":""}],"budget":[{"scenario":"Lean|Balanced|Accelerated","monthly_inr":0,"split":""}],"experiments":[{"hypothesis":"","test":"","measure":""}],"measurement_plan":["how to measure each metric with which tool"]}`,{tier:'complex'});c.strategy=v;Store.put(c)}
+Return ONLY JSON: {"summary":"2 sentences","frameworks":[{"name":"","why":""}],"audience":[{"segment":"","why":"","funnel":"Awareness|Consideration|Conversion|Retention"}],"proposition":"","creative_direction":"","key_messages":["4-6"],"pillars":["4-5 content pillars for this campaign"],"platform_strategy":[{"platform":"","role":"","formats":""}],"journey":["step"],"success_metrics":[{"metric":"","target":"suggested target, marked as a hypothesis","why":""}],"budget":[{"scenario":"Lean|Balanced|Accelerated","monthly_inr":0,"split":""}],"experiments":[{"hypothesis":"","test":"","measure":""}],"measurement_plan":["how to measure each metric with which tool"]}`,{tier:'default'});c.strategy=v;Store.put(c)}
 async function genIntel(c,b){const v=await askJSON('intel',`You are a market research analyst. You have NO web access and no analytics data. Using only general knowledge and the brand material below, write a marketing intelligence brief. Label every point honestly: "verified" ONLY if it is stated in the brand material below, "hypothesis" for your reasoned assumptions, "unavailable" for things that need real data (name the data needed). Never fabricate numbers, competitor metrics or sentiment.
 ${brandBrief(b)}
 Competitors named by the owner: ${b.competitors||'none'}
@@ -165,7 +170,7 @@ Scores are 1-5 (complexity: 5 = easiest). Give 6 trends. Seasonal events must be
 async function genDirections(c,b){const v=await askJSON('directions',`You are a world-class creative director (fashion photography, cinematography, consumer psychology). Propose THREE materially different creative directions for this campaign. Avoid generic AI aesthetics.
 ${brandBrief(b)}
 Campaign: ${c.name} — ${c.objective}. Proposition: ${c.strategy?.proposition||''}. Key messages: ${list(c.strategy?.key_messages).join('; ')}
-Return ONLY JSON: {"directions":[{"name":"2-4 words","style":"e.g. Editorial photography|Luxury minimalism|Cinematic storytelling|Emotional storytelling|Cultural storytelling|Product-led|UGC-inspired|Motion graphics","rationale":"","art_direction":"","moodboard":["5 concrete reference images to shoot or find"],"colours":["#hex","#hex","#hex","#hex"],"colour_treatment":"","typography":"","composition":"","lighting":"","camera":"","styling":"","background":"","narrative":"","consistency":["rules every asset must follow"]}]}`,{tier:'complex'});c.directions=(v.directions||[]).slice(0,3);c.dir=null;Store.put(c)}
+Return ONLY JSON: {"directions":[{"name":"2-4 words","style":"e.g. Editorial photography|Luxury minimalism|Cinematic storytelling|Emotional storytelling|Cultural storytelling|Product-led|UGC-inspired|Motion graphics","rationale":"","art_direction":"","moodboard":["5 concrete reference images to shoot or find"],"colours":["#hex","#hex","#hex","#hex"],"colour_treatment":"","typography":"","composition":"","lighting":"","camera":"","styling":"","background":"","narrative":"","consistency":["rules every asset must follow"]}]}`,{tier:'default'});c.directions=(v.directions||[]).slice(0,3);c.dir=null;Store.put(c)}
 function slotPlan(c){const mix=Object.entries(c.mix).filter(([,n])=>n>0);const total=mix.reduce((a,[,n])=>a+n,0);const seq=[];const left=Object.fromEntries(mix);
   while(seq.length<total){for(const [k] of mix){if(left[k]>0&&seq.length<total){seq.push(k);left[k]--}}}
   return seq.map((f,i)=>({n:i+1,format:f,date:addDays(c.start,Math.floor(i*c.duration/total)),platform:f==='short'?'YouTube':(c.channels.includes('Instagram')||!c.channels.length?'Instagram':c.channels[0]),duration:f==='reel'||f==='short'?reelDur(c,f,i):undefined}))}
