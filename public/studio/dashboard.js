@@ -9,7 +9,9 @@ const {q,h,brand,go,rerender,notify,VIEWS,ACT,ICON}=V;
 const {STAGES,ALL_D,SPEC,G,valOf,show,THEME_NAME,RUN}=J;
 
 /* ---------- helpers ---------- */
-const val=(b,k)=>valOf(b,k);
+/* a decision written before the name was chosen can say "[Brand]": show the brand's name instead */
+const nameIn=(b,v)=>typeof v==='string'?v.replace(/\[(?:brand|brand name|name|your brand)\]/gi,b.name&&b.name!=='New brand'?b.name:'the brand'):Array.isArray(v)?v.map(x=>nameIn(b,x)):v;
+const val=(b,k)=>nameIn(b,valOf(b,k));
 const fld=k=>{const [d,f]=k.split('.');const D=ALL_D.find(x=>x.id===d);return D&&{d:D,f:D.F.find(x=>x.k===f)}};
 const arr=v=>Array.isArray(v)?v:v?[v]:[];
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -50,7 +52,7 @@ function posMap(m,b,col){if(!m||!m.points)return'<p class="vx-muted">No map yet.
  ${m.points.map(p=>{const x=X(+p.x||0),y=Y(+p.y||0),k=p.kind;const a=kx({title:p.name,value:k==='brand'?'Your position':k==='gap'?'Open space no one owns':'Competitor (from the research)',why:p.why,sp:'architect',extra:`${m.x.label}: ${p.x}/100 · ${m.y.label}: ${p.y}/100`,stage:k==='brand'?'define':'discover',insight:'map'});
   const me=m.points.find(q=>q.kind==='brand');const near=me&&Math.abs(X(+me.x)-x)<90&&Math.abs(Y(+me.y)-y)<60;const ly=near&&Y(+me.y)>y?y-34:y+42;
   return k==='gap'?`<g ${a}><circle cx="${x}" cy="${y}" r="26" fill="${col}" fill-opacity=".1" stroke="${col}" stroke-dasharray="4 3"/><text x="${x}" y="${ly}" text-anchor="middle" class="kd-pl kd-gapl">${h(p.name)}</text></g>`
-   :k==='brand'?`<g ${a}><circle cx="${x}" cy="${y}" r="16" fill="${col}" fill-opacity=".18" class="kd-pulse"/><circle cx="${x}" cy="${y}" r="8" fill="${col}"/><text x="${x}" y="${y-16}" text-anchor="middle" class="kd-pl kd-me">${h(p.name||b.name)}</text></g>`
+   :k==='brand'?`<g ${a}><circle cx="${x}" cy="${y}" r="16" fill="${col}" fill-opacity=".18" class="kd-pulse"/><circle cx="${x}" cy="${y}" r="8" fill="${col}"/><text x="${x<P+70?x-14:x>W-P-70?x+14:x}" y="${y<P+44?y+34:y-16}" text-anchor="${x<P+70?'start':x>W-P-70?'end':'middle'}" class="kd-pl kd-me">${h(p.name||b.name)}</text></g>`
    :`<g ${a}><circle cx="${x}" cy="${y}" r="6" fill="var(--vx-mute)"/><text x="${x+10}" y="${y+4}" class="kd-pl">${h(p.name)}</text></g>`}).join('')}</svg>`}
 function riskGrid(risks,col){const cell=56,P=34;const g=[];for(let l=1;l<=5;l++)for(let i=1;i<=5;i++){const heat=(l*i)/25;g.push(`<rect x="${P+(i-1)*cell}" y="${P+(5-l)*cell}" width="${cell-3}" height="${cell-3}" rx="6" fill="${col}" fill-opacity="${.04+heat*.32}"/>`)}
  const dots=risks.map((r,n)=>{const i=clamp(+r.impact||1,1,5),l=clamp(+r.likelihood||1,1,5);const sameCell=x=>clamp(+x.impact||1,1,5)===i&&clamp(+x.likelihood||1,1,5)===l;const same=risks.slice(0,n).filter(sameCell).length,k=risks.filter(sameCell).length;
@@ -73,7 +75,7 @@ function building(b,R){const st=R.stage?STAGES.find(s=>s.key===R.stage):null;con
 VIEWS.dashboard=()=>{const b=brand();if(!b)return V.VIEWS.home();for(const k in KX)delete KX[k];kxN=0;
  const g=G(b),I=g.insights||{},R=RUN[b.id],col=brandColors(b),running=R&&!['done','error'].includes(R.phase);
  if(!I.headline&&!running)return V.head(`<span class="jx-kicker">${h(b.name)}</span>Brand Dashboard`,'Your whole brand on one page, with the reasoning behind every point.')+`
-  <div class="vx-card kd-empty"><h2>Build the dashboard</h2><p>The specialists research your market live, decide every stage (keeping anything you already wrote), and the Chief Brand Architect writes the insights. About 4 minutes.</p>
+  <div class="vx-card kd-empty"><h2>Build the dashboard</h2><p>The specialists research your market live, decide every stage (keeping anything you already wrote), and the Chief Brand Architect writes the insights. About 5 minutes.</p>
   <button class="vx-btn pri" data-act="kdbuild" type="button">Build my brand dashboard</button>${R&&R.phase==='error'?`<p class="kd-warn">Last attempt stopped: ${h(R.last||'')}</p>`:''}</div>`;
  const dec=ALL_D.reduce((a,d)=>a+d.F.filter(f=>valOf(b,d.id+'.'+f.k)!=null).length,0),tot=ALL_D.reduce((a,d)=>a+d.F.length,0);
  const yours=Object.values(g.f).filter(s=>s.by==='you'&&(s.status==='edited'||s.status==='accepted')).length;
@@ -82,12 +84,13 @@ VIEWS.dashboard=()=>{const b=brand();if(!b)return V.VIEWS.home();for(const k in 
  const style=`--kp:${col.prim};--ka:${col.acc};--kl:${col.light};--kd:${col.dark}`;
  return`<div class="kd" style="${style}">
  ${running?building(b,R):''}
+ ${!running&&I.at&&Object.values(g.f).some(x=>x&&x.at&&x.at>I.at+2000)?`<div class="kd-stale" role="status"><span>Some decisions changed after these insights were written${R&&R.phase==='decide'?'':' (an update may have stopped when a page closed)'}.</span><button class="vx-btn sm pri" data-act="kdinsights" type="button">Update the insights</button></div>`:''}
  <header class="kd-hero">
   <div class="kd-id"><small>${h(g.type?g.type[0].toUpperCase()+g.type.slice(1)+' brand':'Brand')} · Brand Dashboard</small>
    <h1 ${fieldX(b,'naming.name')}>${h(b.name)}</h1>${tag?`<p class="kd-tag" ${fieldX(b,'naming.tagline')}>${h(tag)}</p>`:''}
    ${I.headline?`<p class="kd-thesis" ${kx({title:'Brand thesis',value:I.headline,why:(I.why||{}).headline,sp:'architect',stage:'define',insight:'headline'})}>${h(I.headline)}</p>`:''}
    <div class="kd-strip">${col.p.map(c=>`<i style="background:${c.hex}" ${fieldX(b,'identity.palette')} title="${h(c.hex+' '+(c.role||''))}"></i>`).join('')}</div>
-   <div class="vx-row kd-actions"><button class="vx-btn sm" data-act="kdfeedback" type="button">Give feedback</button><button class="vx-btn sm" data-act="kdrebuild" type="button" ${running?'disabled':''}>Rebuild everything</button><button class="vx-btn sm" data-go="genome" type="button">Brand Genome</button></div></div>
+   <div class="vx-row kd-actions"><button class="vx-btn sm" data-act="kdfeedback" type="button" ${running?'disabled title="Wait for the build to finish"':''}>Give feedback</button><button class="vx-btn sm" data-act="kdrebuild" type="button" ${running?'disabled':''}>Rebuild everything</button><button class="vx-btn sm" data-go="genome" type="button">Brand Genome</button></div></div>
   <div class="kd-kpis">
    ${gauge(strAvg,'Brand strength',kx({title:'Brand strength',value:`${Math.round(strAvg)}/100, the average of 7 dimensions`,why:'Scored by the Chief Brand Architect from every decision and the research. Open the dimensions below to see each reason.',sp:'architect',insight:'strength'}),col.prim)}
    ${gauge(+((I.readiness||{}).score)||0,'Launch readiness',kx({title:'Launch readiness',value:`${(I.readiness||{}).score||0}/100`,why:(I.why||{}).readiness,list:[...(I.readiness?.blockers||[]).map(x=>'Blocker: '+x),...(I.readiness?.next||[]).map(x=>'Next: '+x)],sp:'architect',insight:'readiness'}),col.acc)}
@@ -134,7 +137,7 @@ VIEWS.dashboard=()=>{const b=brand();if(!b)return V.VIEWS.home();for(const k in 
  <section class="kd-card"><h2>The next 90 days</h2><div class="kd-plan">${(I.plan90||[]).map(p=>`<div ${kx({title:'Weeks '+p.weeks,value:p.focus,why:'Measure: '+p.metric,sp:'growth',stage:'launch',insight:'plan'})}><small>Weeks ${h(p.weeks)}</small><b>${h(p.focus)}</b><span>${h(p.metric)}</span></div>`).join('')}</div></section>
 
  <section class="kd-row">
-  <div class="kd-card kd-w2"><h2>Market research</h2><p class="kd-sub">${h(g.research?.data?.summary||'')}</p>${research(b)}</div>
+  <div class="kd-card kd-w2"><h2>Market research</h2><p class="kd-sub">${h(String(g.research?.data?.summary||'').replace(/<\/?cite\b[^>]*>/gi,''))}</p>${research(b)}</div>
   <div class="kd-card"><h2>Experiments</h2>${experiments(b)}</div>
  </section>
  </div>`};
@@ -213,7 +216,8 @@ ACT.kxsave=el=>saveEdit(el.dataset.k,true);ACT.kxonly=el=>saveEdit(el.dataset.k,
 ACT.kxfeed=el=>{const o=KX[el.dataset.k],b=brand(),t=q('#kxEdit');const msg=t&&t.value.trim();if(!msg){notify('Write your feedback first.');return}feedback(b,msg,o.stage||'define');ACT.kxclose()};
 function feedback(b,msg,stageKey){const g=G(b);const s=STAGES.find(x=>x.key===stageKey)||STAGES[1];s.D.forEach(d=>{g.inputs[d.id]=[g.inputs[d.id],msg].filter(Boolean).join(' · ').slice(-300)});g.log.unshift({at:Date.now(),d:s.D[0].id,what:'feedback: '+msg.slice(0,60),sp:'architect'});J.save(b);notify('Thanks. The specialists are revising from '+s.name+' onwards…');J.recomputeFrom(b,s.key)}
 ACT.kdbuild=()=>{const b=brand();J.autopilot(b)};
-ACT.kdrebuild=()=>{const b=brand();V.confirmBox('Rebuild the whole brand?','The specialists research the market again and re-decide every stage. Everything you wrote yourself stays. About 4 minutes and the same credits as a new build.','Rebuild',()=>J.autopilot(b,0,{force:true,research:true}))};
+ACT.kdinsights=async el=>{const b=brand();el.disabled=true;el.textContent='Writing…';try{await J.writeInsights(b);notify('Insights updated.')}catch(e){notify(V.errText(e))}rerender()};
+ACT.kdrebuild=()=>{const b=brand();V.confirmBox('Rebuild the whole brand?','The specialists research the market again and re-decide every stage. Everything you wrote yourself stays. About 5 minutes and the same credits as a new build.','Rebuild',()=>J.autopilot(b,0,{force:true,research:true}))};
 ACT.kdfeedback=()=>{const m=q('#vxModal');m.innerHTML=`<div class="box"><h3>Tell the specialists what to change</h3><p class="vx-small">Say it in your own words. They revise from the stage you pick onwards, keeping what you wrote yourself.</p>
  <textarea id="kdFb" rows="4" class="jx-ed" placeholder="e.g. We are more premium than this; lead with the weavers, not discounts"></textarea>
  <label class="jx-sm" for="kdSt">Start from</label><select id="kdSt">${STAGES.map(s=>`<option value="${s.key}" ${s.key==='define'?'selected':''}>${s.n}. ${s.name}</option>`).join('')}</select>

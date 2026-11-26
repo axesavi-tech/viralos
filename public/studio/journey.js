@@ -157,7 +157,8 @@ const sProg=(b,s)=>{let n=0,of=0;s.D.forEach(d=>{const p=dProg(b,d);n+=p.n;of+=p
 const allProg=b=>{let n=0,of=0;STAGES.forEach(s=>{const p=sProg(b,s);n+=p.n;of+=p.of});return{n,of,pct:of?Math.round(100*n/of):0}};
 const BUSY={};
 /* what one specialist step costs: the server prices 'journey' like any studio AI call unless an admin sets its own rate */
-const COST=()=>{const R=window.VX_RATES;return R?(R.journey??R.studio_ai??6):V.rate('journey')};
+/* the server's rate, also before your account has answered (the old local default of 2 under-quoted a build by half) */
+const COST=()=>{const R=window.VX_RATES;return R?(R.journey??R.studio_ai??6):window.VX?6:V.rate('journey')};
 
 /* Accepted decisions flow into the brand profile every existing studio already reads. */
 function sync(b){const g=G(b);b.dna=b.dna||{};
@@ -243,7 +244,7 @@ function startView(){return head('Start your brand','Describe your idea in a lin
   <fieldset class="jx-type"><legend>It is a</legend>${[['physical','Physical product'],['digital','Digital product or app'],['service','Service']].map(([v,l],i)=>`<label><input type="radio" name="type" value="${v}" ${i===0?'checked':''}><span>${l}</span></label>`).join('')}</fieldset>
   <label class="jx-sm" for="jx-name">Brand name <span class="vx-muted">(optional: leave blank and we will suggest names)</span></label>
   <input id="jx-name" name="name" maxlength="60" autocomplete="off">
-  <label class="jx-auto"><input type="checkbox" name="auto" checked><span><b>Build my whole brand now</b> · live market research, all 7 stages decided by the specialists, and your Brand Dashboard. About 4 minutes and ${25+20*COST()+COST()} credits. You can change anything afterwards.</span></label>
+  <label class="jx-auto"><input type="checkbox" name="auto" checked><span><b>Build my whole brand now</b> · live market research, all 7 stages decided by the specialists, and your Brand Dashboard. About 5 minutes and ${25+20*COST()+COST()} credits. You can change anything afterwards.</span></label>
   <div class="vx-row"><button class="vx-btn pri" type="submit">Start my brand</button><span class="vx-small vx-muted">Untick to go step by step: the Discover stage first (about ${4*COST()} credits), approving each decision.</span></div>
  </form>
  <div class="vx-card jx-how"><h2>How it works</h2><ol class="jx-steps">${STAGES.map(s=>`<li><b>${s.n}. ${s.name}</b><span>${h(s.q)}</span></li>`).join('')}</ol>
@@ -362,6 +363,8 @@ Report only what your searches support; say "not found" rather than guess. Never
 Return ONLY JSON: {"summary":"under 90 words","competitors":[{"name":"","positioning":"under 18 words","price_band":"as published, or empty","channels":"","url":"https://..."}],"price_bands":[{"band":"entry|mid|premium|luxury","range":"as found","examples":""}],"trends":[{"trend":"","evidence":"under 20 words","url":"https://..."}],"audience_signals":["under 20 words each"],"whitespace":["gaps no competitor owns, under 20 words"]}
 At most 6 competitors, 4 price bands, 5 trends, 4 audience signals, 3 white spaces.`;
  const r=await aiJob(p,'research',{research:true,searches:8,maxTokens:6000});let data={};try{data=parseJ(r.text)}catch(e){data={summary:String(r.text||'').slice(0,600)}}
+ /* web search answers can carry <cite index=…> markers inside the text: keep the words, drop the markers */
+ const clean=v=>typeof v==='string'?v.replace(/<\/?cite\b[^>]*>/gi,'').replace(/\s{2,}/g,' ').trim():Array.isArray(v)?v.map(clean):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,clean(x)])):v;data=clean(data);
  const own=[];const add=(u,t)=>{if(typeof u==='string'&&/^https:\/\//.test(u)&&!own.some(x=>x.url===u))own.push({url:u,title:t||u.replace(/^https:\/\/(www\.)?/,'').split('/')[0]})};
  (data.competitors||[]).forEach(c=>add(c.url,c.name));(data.trends||[]).forEach(t=>add(t.url,t.trend));
  /* the pages the analyst actually cited in its findings come first, then the rest of what the searches returned */
@@ -388,10 +391,13 @@ Return ONLY JSON:
  const v=await askJSON('journey',p,{tier:'default'});g.insights={...v,at:Date.now()};save(b);return g.insights}
 async function runWave(b,ds,o){await Promise.all(ds.map(d=>recommend(d,null,{...o,b,auto:true,quiet:true}).catch(e=>{/* one more try for an unreadable answer; never for timeouts or credit errors */if(e&&e.code==='bad_json')return recommend(d,null,{...o,b,auto:true,quiet:true});throw e}).then(()=>{RUN[b.id].done++;paint()}).catch(e=>{RUN[b.id].errors=(RUN[b.id].errors||0)+1;RUN[b.id].last=errText(e);paint()})))}
 const paint=()=>{if(['dashboard','home'].includes(V.cur.view))rerender()};
+/* decisions made in the same wave as the name can say "[Brand]": once the name exists, write it in */
+function fillName(b){const n=b.name;if(!n||n==='New brand')return;const re=/\[(?:brand|brand name|name|your brand)\]/gi;const f=v=>typeof v==='string'?v.replace(re,n):Array.isArray(v)?v.map(f):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,f(x)])):v;
+ let ch=false;Object.values(G(b).f).forEach(x=>{if(!x||x.by==='you')return;const s0=JSON.stringify(x.value);if(re.test(s0)){re.lastIndex=0;x.value=f(x.value);ch=true}re.lastIndex=0});if(ch)save(b)}
 async function autopilot(b,from=0,o={}){if(RUN[b.id]&&RUN[b.id].phase&&RUN[b.id].phase!=='done'&&RUN[b.id].phase!=='error')return;
  const stages=STAGES.slice(from);const R=RUN[b.id]={phase:'research',stage:null,done:0,total:stages.reduce((a,s)=>a+s.D.length,0),errors:0,at:Date.now()};paint();
  try{if(!G(b).research||o.research){try{await researchMarket(b)}catch(e){R.last='Live research was not available ('+errText(e)+'); the specialists continued from your idea.'}}
-  for(const s of stages){R.phase='decide';R.stage=s.key;paint();await runWave(b,s.D,{force:!!o.force})}
+  for(const s of stages){R.phase='decide';R.stage=s.key;paint();await runWave(b,s.D,{force:!!o.force});fillName(b)}
   R.phase='insights';R.stage=null;paint();await writeInsights(b);R.phase='done';G(b).built=Date.now();save(b)}
  catch(e){R.phase='error';R.last=errText(e)}paint()}
 /* a change ripples forward: every later stage (and the insights) is re-decided, keeping everything you wrote yourself */

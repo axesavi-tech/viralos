@@ -7,7 +7,9 @@ let WS=null,ME=null,mePromise=null;
 async function api(path,opts={}){
   const headers={...(opts.headers||{})};if(WS)headers['x-workspace']=WS;
   if(opts.json!==undefined){headers['content-type']='application/json';opts.body=JSON.stringify(opts.json)}
-  const r=await fetch(path,{method:opts.method||(opts.body?'POST':'GET'),headers,body:opts.body,credentials:'same-origin'});
+  let r;for(let i=0;;i++){r=await fetch(path,{method:opts.method||(opts.body?'POST':'GET'),headers,body:opts.body,credentials:'same-origin'});
+    /* the sign-in check runs before anything is done or charged, so a brief sign-in outage is safe to wait out */
+    if(r.status!==503||i>=3||!(r.headers.get('content-type')||'').includes('json'))break;const peek=await r.clone().json().catch(()=>({}));if(peek.code!=='auth_unavailable')break;await new Promise(x=>setTimeout(x,1000*2**i))}
   if(r.status===401){location.href='/login?next='+encodeURIComponent('/studio/index.html'+location.hash);throw{code:'unauthenticated',message:'Sign in again.'}}
   const ct=r.headers.get('content-type')||'';const data=ct.includes('json')?await r.json():await r.blob();
   if(!r.ok){const e={code:data&&data.code||(r.status===402?'insufficient_credits':r.status===429?'rate_limited':r.status===504?'timeout':'error'),message:data&&data.error||('Request failed ('+r.status+')'),status:r.status};
