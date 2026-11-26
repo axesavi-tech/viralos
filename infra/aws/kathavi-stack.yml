@@ -1,52 +1,41 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: >-
-  Kathavi on AWS - self-hosted Supabase (Postgres, Auth, Storage, Studio) on one EC2 server
-  with automatic HTTPS, daily database + file backups to S3, daily disk snapshots, and secrets
-  in SSM Parameter Store. The Next.js app runs separately on AWS Amplify (see infra/aws/README.md).
+  Kathavi on AWS (low-cost, hardened) - self-hosted Supabase (Postgres, Auth, Storage) on one
+  Graviton EC2 server. Only HTTPS is public and only the auth/rest/storage APIs are reachable;
+  the Studio admin dashboard is private (SSM port-forward). Daily DB + file backups to S3,
+  daily disk snapshots, secrets in SSM Parameter Store, automatic security updates.
 
 Parameters:
   ApiDomain:
     Type: String
     Default: api.kathavi.com
-    Description: Hostname for the Supabase API (must point at this server's Elastic IP)
   SiteUrl:
     Type: String
     Default: https://kathavi.com
-    Description: Public URL of the Kathavi app (used for sign-in redirects)
   CertEmail:
     Type: String
-    Default: axesavi@gmail.com
+    Default: abhijit@iraaya.com
     Description: Email for Let's Encrypt certificate notices
   InstanceType:
     Type: String
-    Default: m7i-flex.large
-    AllowedValues: [m7i-flex.large, c7i-flex.large, t3.large, t3.xlarge, m6i.large, m6i.xlarge]
-    Description: m7i-flex.large (8 GB) is free-plan eligible and recommended; t3.large and bigger need a paid plan
+    Default: t4g.medium
+    AllowedValues: [t4g.medium, t4g.large, t4g.xlarge]
+    Description: Graviton (ARM). t4g.medium = 2 vCPU / 4 GB (cheapest that runs Supabase); resize later with a restart
   DiskSizeGb:
     Type: Number
-    Default: 60
-    MinValue: 30
+    Default: 30
+    MinValue: 20
   HostedZoneId:
     Type: String
     Default: ""
-    Description: Optional Route 53 hosted zone ID for kathavi.com - if set, the api record is created for you
-  SmtpHost:
+    Description: Route 53 hosted zone ID for kathavi.com - creates the api A record
+  SupabaseRelease:
     Type: String
-    Default: ""
-    Description: Optional - Amazon SES SMTP endpoint, e.g. email-smtp.ap-south-1.amazonaws.com
-  SmtpUser:
-    Type: String
-    Default: ""
-  SmtpPass:
-    Type: String
-    Default: ""
-    NoEcho: true
-  SmtpSender:
-    Type: String
-    Default: hello@kathavi.com
+    Default: self-hosted/v0.8.5
+    Description: Pinned Supabase self-hosted release tag
   UbuntuAmi:
     Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/arm64/hvm/ebs-gp3/ami-id
 
 Conditions:
   HasZone: !Not [!Equals [!Ref HostedZoneId, ""]]
@@ -58,9 +47,12 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       VersioningConfiguration: { Status: Enabled }
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+            BucketKeyEnabled: true
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -68,11 +60,28 @@ Resources:
         RestrictPublicBuckets: true
       LifecycleConfiguration:
         Rules:
-          - Id: expire-old-backups
+          - Id: expire-old-db-dumps
             Status: Enabled
             Prefix: db/
             ExpirationInDays: 35
-            NoncurrentVersionExpiration: { NoncurrentDays: 7 }
+          - Id: expire-old-versions
+            Status: Enabled
+            NoncurrentVersionExpiration: { NoncurrentDays: 14 }
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 2 }
+
+  BackupBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BackupBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: "s3:*"
+            Resource: [!GetAtt BackupBucket.Arn, !Sub "${BackupBucket.Arn}/*"]
+            Condition: { Bool: { "aws:SecureTransport": "false" } }
 
   ServerRole:
     Type: AWS::IAM::Role
@@ -94,7 +103,7 @@ Resources:
                 Action: [ssm:PutParameter, ssm:GetParameter, ssm:GetParameters]
                 Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/kathavi/*
               - Effect: Allow
-                Action: [s3:PutObject, s3:GetObject, s3:ListBucket, s3:DeleteObject]
+                Action: [s3:PutObject, s3:GetObject, s3:ListBucket]
                 Resource:
                   - !GetAtt BackupBucket.Arn
                   - !Sub ${BackupBucket.Arn}/*
@@ -107,7 +116,7 @@ Resources:
   WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Kathavi Supabase - HTTPS only (no SSH, no database port; admin access via SSM Session Manager)
+      GroupDescription: Kathavi - HTTP/HTTPS only. No SSH, no database port; admin via SSM Session Manager
       SecurityGroupIngress:
         - { IpProtocol: tcp, FromPort: 80, ToPort: 80, CidrIp: 0.0.0.0/0, Description: HTTP for certificate issue and redirect }
         - { IpProtocol: tcp, FromPort: 443, ToPort: 443, CidrIp: 0.0.0.0/0, Description: HTTPS API }
@@ -117,11 +126,13 @@ Resources:
     Properties:
       ImageId: !Ref UbuntuAmi
       InstanceType: !Ref InstanceType
+      CreditSpecification: { CPUCredits: standard }
       IamInstanceProfile: !Ref ServerProfile
       SecurityGroupIds: [!GetAtt WebSecurityGroup.GroupId]
       DisableApiTermination: true
       PropagateTagsToVolumeOnCreation: true
-      MetadataOptions: { HttpTokens: required }
+      Monitoring: false
+      MetadataOptions: { HttpTokens: required, HttpPutResponseHopLimit: 1 }
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
           Ebs: { VolumeSize: !Ref DiskSizeGb, VolumeType: gp3, Encrypted: true, DeleteOnTermination: false }
@@ -134,82 +145,128 @@ Resources:
           set -euxo pipefail
           exec > /var/log/kathavi-setup.log 2>&1
           export DEBIAN_FRONTEND=noninteractive
-          apt-get update -y
-          apt-get install -y docker.io docker-compose-v2 git python3 openssl cron
-          snap install aws-cli --classic || true
-          AWS=/snap/bin/aws
-          systemctl enable --now docker
+          REGION=${AWS::Region}
 
-          git clone --depth 1 https://github.com/supabase/supabase /opt/supabase-src
-          mkdir -p /opt/supabase && cp -r /opt/supabase-src/docker/. /opt/supabase/
-          cd /opt/supabase && cp .env.example .env
+          # 2 GB swap so 4 GB RAM is comfortable
+          if [ ! -f /swapfile ]; then
+            fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+            echo '/swapfile none swap sw 0 0' >> /etc/fstab
+          fi
+          echo 'vm.swappiness=10' > /etc/sysctl.d/99-kathavi.conf && sysctl -p /etc/sysctl.d/99-kathavi.conf
 
-          rnd() { openssl rand -hex "$1"; }
-          JWT_SECRET=$(rnd 32)
-          mkjwt() { python3 - "$JWT_SECRET" "$1" <<'PY'
-          import sys,hmac,hashlib,base64,json,time
-          s,role=sys.argv[1],sys.argv[2]
-          b=lambda d:base64.urlsafe_b64encode(d).rstrip(b"=").decode()
-          h=b(json.dumps({"alg":"HS256","typ":"JWT"},separators=(",",":")).encode())
-          p=b(json.dumps({"role":role,"iss":"supabase","iat":int(time.time()),"exp":int(time.time())+10*365*86400},separators=(",",":")).encode())
-          print(h+"."+p+"."+b(hmac.new(s.encode(),(h+"."+p).encode(),hashlib.sha256).digest()))
-          PY
-          }
-          ANON_KEY=$(mkjwt anon); SERVICE_KEY=$(mkjwt service_role)
-          PG_PASS=$(rnd 24); DASH_PASS=$(rnd 16)
+          # OS patches + automatic security updates (reboot 03:30 IST if a kernel update needs it)
+          apt-get update -y && apt-get -y upgrade
+          apt-get install -y unattended-upgrades curl git jq openssl cron unzip
+          printf 'APT::Periodic::Update-Package-Lists "1";\nAPT::Periodic::Unattended-Upgrade "1";\n' > /etc/apt/apt.conf.d/20auto-upgrades
+          printf 'Unattended-Upgrade::Automatic-Reboot "true";\nUnattended-Upgrade::Automatic-Reboot-Time "22:00";\n' > /etc/apt/apt.conf.d/52kathavi-reboot
+          systemctl enable --now unattended-upgrades cron
+
+          # Official Supabase self-hosted setup, pinned release (installs Docker + AWS CLI, generates all secrets/keys)
+          mkdir -p /opt && cd /opt
+          git clone -q --depth 1 --branch "${SupabaseRelease}" --filter=blob:none --sparse https://github.com/supabase/supabase /opt/supabase-src
+          (cd /opt/supabase-src && git sparse-checkout set docker)
+          sh /opt/supabase-src/docker/setup.sh -y --with-aws --ref "${SupabaseRelease}" --project-dir supabase
+          AWS=/usr/local/bin/aws
+          cd /opt/supabase
+
           setv() { if grep -q "^$1=" .env; then sed -i "s|^$1=.*|$1=$2|" .env; else echo "$1=$2" >> .env; fi; }
-          setv POSTGRES_PASSWORD "$PG_PASS"
-          setv JWT_SECRET "$JWT_SECRET"
-          setv ANON_KEY "$ANON_KEY"
-          setv SERVICE_ROLE_KEY "$SERVICE_KEY"
-          setv DASHBOARD_USERNAME admin
-          setv DASHBOARD_PASSWORD "$DASH_PASS"
-          setv SECRET_KEY_BASE "$(rnd 32)$(rnd 32)"
-          setv VAULT_ENC_KEY "$(rnd 16)"
-          setv PG_META_CRYPTO_KEY "$(rnd 16)"
-          setv LOGFLARE_PUBLIC_ACCESS_TOKEN "$(rnd 24)"
-          setv LOGFLARE_PRIVATE_ACCESS_TOKEN "$(rnd 24)"
-          setv POOLER_TENANT_ID kathavi
+          getv() { grep "^$1=" .env | head -n1 | cut -d= -f2-; }
+          setv SUPABASE_PUBLIC_URL "https://${ApiDomain}"
+          setv API_EXTERNAL_URL "https://${ApiDomain}/auth/v1"
           setv SITE_URL "${SiteUrl}"
           setv ADDITIONAL_REDIRECT_URLS "${SiteUrl}/auth/callback,${SiteUrl}/**"
-          setv API_EXTERNAL_URL "https://${ApiDomain}"
-          setv SUPABASE_PUBLIC_URL "https://${ApiDomain}"
+          setv PROXY_DOMAIN "${ApiDomain}"
           setv ENABLE_EMAIL_SIGNUP true
           setv ENABLE_EMAIL_AUTOCONFIRM false
+          setv ENABLE_ANONYMOUS_USERS false
+          setv ENABLE_PHONE_SIGNUP false
           setv DISABLE_SIGNUP false
-          if [ -n "${SmtpHost}" ]; then
-            setv SMTP_HOST "${SmtpHost}"; setv SMTP_PORT 587; setv SMTP_USER "${SmtpUser}"
-            setv SMTP_PASS "${SmtpPass}"; setv SMTP_ADMIN_EMAIL "${SmtpSender}"; setv SMTP_SENDER_NAME Kathavi
-          fi
-          chmod 600 .env
+          setv DASHBOARD_USERNAME admin
+          setv POOLER_TENANT_ID kathavi
+          setv COMPOSE_FILE docker-compose.yml:docker-compose.kathavi.yml
 
-          docker compose pull
+          # Kathavi only uses auth, database API and storage: switch off realtime, edge functions and
+          # the connection pooler (saves RAM, smaller attack surface); gateway listens on localhost only.
+          cat > docker-compose.kathavi.yml <<'YML'
+          services:
+            realtime:
+              profiles: ["disabled"]
+            functions:
+              profiles: ["disabled"]
+            supavisor:
+              profiles: ["disabled"]
+            api-gw:
+              ports: !override
+                - "127.0.0.1:8000:8000/tcp"
+          YML
+          chmod 600 .env
+          docker compose pull --quiet
           docker compose up -d
 
+          # HTTPS reverse proxy: only the public APIs are exposed; Studio/meta stay private
           mkdir -p /opt/caddy
-          printf '{\n  email ${CertEmail}\n}\n${ApiDomain} {\n  encode gzip\n  reverse_proxy localhost:8000\n}\n' > /opt/caddy/Caddyfile
+          cat > /opt/caddy/Caddyfile <<'CADDY'
+          {
+            email ${CertEmail}
+          }
+          ${ApiDomain} {
+            encode gzip
+            header {
+              Strict-Transport-Security "max-age=31536000; includeSubDomains"
+              X-Content-Type-Options "nosniff"
+              Referrer-Policy "strict-origin-when-cross-origin"
+              -Server
+            }
+            @api path /auth/v1/* /rest/v1/* /storage/v1/* /graphql/v1/*
+            handle @api {
+              reverse_proxy 127.0.0.1:8000
+            }
+            handle {
+              respond "Not found" 404
+            }
+          }
+          CADDY
           docker run -d --name caddy --restart unless-stopped --network host \
-            -v /opt/caddy/Caddyfile:/etc/caddy/Caddyfile -v caddy_data:/data caddy:2
+            -v /opt/caddy/Caddyfile:/etc/caddy/Caddyfile:ro -v caddy_data:/data -v caddy_config:/config caddy:2
 
-          put() { $AWS ssm put-parameter --region ${AWS::Region} --overwrite --name "/kathavi/supabase/$1" --type "$2" --value "$3"; }
+          # Secrets to SSM Parameter Store (encrypted); the app reads URL + anon/publishable keys
+          put() { $AWS ssm put-parameter --region "$REGION" --overwrite --name "/kathavi/supabase/$1" --type "$2" --value "$3" > /dev/null; }
           put url String "https://${ApiDomain}"
-          put anon-key String "$ANON_KEY"
-          put service-role-key SecureString "$SERVICE_KEY"
-          put postgres-password SecureString "$PG_PASS"
-          put dashboard-password SecureString "$DASH_PASS"
-          put jwt-secret SecureString "$JWT_SECRET"
+          put anon-key String "$(getv ANON_KEY)"
+          put publishable-key String "$(getv SUPABASE_PUBLISHABLE_KEY)"
+          put service-role-key SecureString "$(getv SERVICE_ROLE_KEY)"
+          put secret-key SecureString "$(getv SUPABASE_SECRET_KEY)"
+          put postgres-password SecureString "$(getv POSTGRES_PASSWORD)"
+          put dashboard-password SecureString "$(getv DASHBOARD_PASSWORD)"
+          put jwt-secret SecureString "$(getv JWT_SECRET)"
 
+          # Daily backups to S3 (02:00 IST)
           cat > /usr/local/bin/kathavi-backup <<'SH'
           #!/bin/bash
           set -euo pipefail
           D=$(date -u +%F)
-          docker exec supabase-db pg_dumpall -U postgres | gzip | /snap/bin/aws s3 cp - "s3://BUCKET/db/kathavi-$D.sql.gz"
-          /snap/bin/aws s3 sync /opt/supabase/volumes/storage "s3://BUCKET/storage/" --only-show-errors
+          docker exec supabase-db pg_dumpall -U postgres | gzip | /usr/local/bin/aws s3 cp - "s3://BUCKET/db/kathavi-$D.sql.gz"
+          /usr/local/bin/aws s3 sync /opt/supabase/volumes/storage "s3://BUCKET/storage/" --only-show-errors
           SH
           sed -i "s|BUCKET|${BackupBucket}|g" /usr/local/bin/kathavi-backup
           chmod 700 /usr/local/bin/kathavi-backup
           echo "30 20 * * * root /usr/local/bin/kathavi-backup >> /var/log/kathavi-backup.log 2>&1" > /etc/cron.d/kathavi-backup
-          systemctl enable --now cron
+
+          # SES SMTP helper: kathavi-smtp reads /kathavi/smtp/{host,user,pass,sender} from SSM and restarts auth
+          cat > /usr/local/bin/kathavi-smtp <<'SH'
+          #!/bin/bash
+          set -euo pipefail
+          A=/usr/local/bin/aws; R=REGIONX; cd /opt/supabase
+          g() { $A ssm get-parameter --region $R --with-decryption --name "/kathavi/smtp/$1" --query Parameter.Value --output text; }
+          setv() { if grep -q "^$1=" .env; then sed -i "s|^$1=.*|$1=$2|" .env; else echo "$1=$2" >> .env; fi; }
+          setv SMTP_HOST "$(g host)"; setv SMTP_PORT 587; setv SMTP_USER "$(g user)"; setv SMTP_PASS "$(g pass)"
+          setv SMTP_ADMIN_EMAIL "$(g sender)"; setv SMTP_SENDER_NAME Kathavi
+          docker compose up -d auth
+          echo "SMTP configured"
+          SH
+          sed -i "s|REGIONX|$REGION|" /usr/local/bin/kathavi-smtp
+          chmod 700 /usr/local/bin/kathavi-smtp
+
           echo KATHAVI_SETUP_DONE
 
   ServerIp:
@@ -229,6 +286,16 @@ Resources:
       TTL: "300"
       ResourceRecords: [!Ref ServerIp]
 
+  CaaRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Ref ApiDomain
+      Type: CAA
+      TTL: "3600"
+      ResourceRecords: ['0 issue "letsencrypt.org"', '0 issue "amazon.com"']
+
   SnapshotRole:
     Type: AWS::IAM::Role
     Properties:
@@ -244,7 +311,7 @@ Resources:
   DailySnapshots:
     Type: AWS::DLM::LifecyclePolicy
     Properties:
-      Description: Kathavi daily disk snapshots keep 14
+      Description: Kathavi daily disk snapshots keep 7
       State: ENABLED
       ExecutionRoleArn: !GetAtt SnapshotRole.Arn
       PolicyDetails:
@@ -253,24 +320,22 @@ Resources:
         Schedules:
           - Name: daily
             CreateRule: { Interval: 24, IntervalUnit: HOURS, Times: ["21:00"] }
-            RetainRule: { Count: 14 }
+            RetainRule: { Count: 7 }
             CopyTags: true
 
 Outputs:
   ServerElasticIp:
-    Description: Point api.kathavi.com (A record) here if you did not give a HostedZoneId
     Value: !Ref ServerIp
   SupabaseUrl:
-    Description: Use as NEXT_PUBLIC_SUPABASE_URL in Amplify
+    Description: NEXT_PUBLIC_SUPABASE_URL for the app
     Value: !Sub https://${ApiDomain}
   AnonKeyParameter:
-    Description: Use its value as NEXT_PUBLIC_SUPABASE_ANON_KEY in Amplify
+    Description: NEXT_PUBLIC_SUPABASE_ANON_KEY for the app
     Value: /kathavi/supabase/anon-key
   StudioDashboard:
-    Description: Supabase Studio (username admin, password in /kathavi/supabase/dashboard-password)
-    Value: !Sub https://${ApiDomain}
+    Description: Private - port-forward with SSM then open http://localhost:8000 (user admin, password in /kathavi/supabase/dashboard-password)
+    Value: !Sub aws ssm start-session --region ${AWS::Region} --target ${Server} --document-name AWS-StartPortForwardingSession --parameters portNumber=8000,localPortNumber=8000
   BackupBucketName:
     Value: !Ref BackupBucket
   ConnectToServer:
-    Description: Admin shell without SSH
     Value: !Sub aws ssm start-session --region ${AWS::Region} --target ${Server}
