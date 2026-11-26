@@ -548,3 +548,6 @@ textarea[data-dna]{field-sizing:content;overflow:hidden;resize:vertical;min-heig
 @media(max-width:560px){.jx-path{grid-template-columns:repeat(2,minmax(0,1fr))}.jx-fields,.jx-genome{grid-template-columns:1fr}.jx-dir .vx-row{flex-wrap:wrap}.jx-dir .vx-btn{width:100%}.jx-dmeta{align-items:flex-start}.jx-member dl{grid-template-columns:1fr}}
 .vx-navgrp[hidden]{display:none}
 .jx-dir input{font:inherit;font-size:15px;padding:10px 12px;border-radius:10px;border:1px solid var(--vx-line);background:var(--vx-panel);color:var(--vx-ink);min-height:44px}
+.jx-bp{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--vx-mute)}
+.jx-bp select{font:inherit;font-size:14px;color:var(--vx-ink);min-height:40px;padding:6px 10px;border-radius:10px;border:1px solid var(--vx-line);background:var(--vx-panel)}
+.jx-read{font-size:12px;font-weight:700;color:var(--vx-ok);margin:0 0 4px}

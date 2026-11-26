@@ -10,7 +10,7 @@ async function api(path,opts={}){
   const r=await fetch(path,{method:opts.method||(opts.body?'POST':'GET'),headers,body:opts.body,credentials:'same-origin'});
   if(r.status===401){location.href='/login?next='+encodeURIComponent('/studio/index.html'+location.hash);throw{code:'unauthenticated',message:'Sign in again.'}}
   const ct=r.headers.get('content-type')||'';const data=ct.includes('json')?await r.json():await r.blob();
-  if(!r.ok){const e={code:data&&data.code||(r.status===402?'insufficient_credits':r.status===429?'rate_limited':'error'),message:data&&data.error||('Request failed ('+r.status+')'),status:r.status};
+  if(!r.ok){const e={code:data&&data.code||(r.status===402?'insufficient_credits':r.status===429?'rate_limited':r.status===504?'timeout':'error'),message:data&&data.error||('Request failed ('+r.status+')'),status:r.status};
     if(e.code==='insufficient_credits')window.dispatchEvent(new CustomEvent('vx:nocredits',{detail:e}));throw e}
   return data}
 async function me(force){if(ME&&!force)return ME;if(!mePromise||force)mePromise=api('/api/me').then(d=>{ME=d;WS=d.workspace&&d.workspace.id;window.VX_BAL=d.balance;window.VX_RATES=d.rates;window.dispatchEvent(new CustomEvent('vx:me',{detail:d}));return d}).finally(()=>{mePromise=null});return mePromise}
