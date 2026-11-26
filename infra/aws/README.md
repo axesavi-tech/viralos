@@ -12,7 +12,7 @@ Everything runs in your own AWS account. No Vercel, no Supabase cloud, and no ch
 | Secrets | **SSM Parameter Store** | Generated on the server; never in git |
 | DNS | **Route 53** | Domain stays registered at Vercel for now (see step 7) |
 
-Use the **Asia Pacific (Mumbai) ap-south-1** region for everything (top-right region picker in the console).
+Use **one region** for everything. Mumbai (ap-south-1) is best for Indian users, but AWS free-plan projects are locked to the region they were created in (Kathavi's current project: **Asia Pacific (Sydney) ap-southeast-2**). Wherever this guide says `ap-south-1`, use your region instead.
 
 ---
 
@@ -31,7 +31,7 @@ Use the **Asia Pacific (Mumbai) ap-south-1** region for everything (top-right re
 2. Stack name `kathavi`. Fill in:
    - `HostedZoneId` = the Z… ID from step 2 (creates `api.kathavi.com` automatically)
    - `SmtpHost` = `email-smtp.ap-south-1.amazonaws.com`, `SmtpUser` / `SmtpPass` = from step 1
-   - leave the rest as defaults (`t3.large`, 60 GB)
+   - leave the rest as defaults (`m7i-flex.large` — free-plan eligible, 8 GB — and 60 GB disk)
 3. Tick the IAM acknowledgement → **Submit**. Wait for `CREATE_COMPLETE`, then about **10 more minutes** while the server installs Supabase.
 4. Check: open `https://api.kathavi.com` → you should get a login box (Supabase Studio). Username `admin`, password from **Systems Manager → Parameter Store → `/kathavi/supabase/dashboard-password`** (*Show decrypted value*).
 
@@ -76,4 +76,4 @@ Use the **Asia Pacific (Mumbai) ap-south-1** region for everything (top-right re
 - **Manual backup now:** `sudo /usr/local/bin/kathavi-backup`.
 - **Restore:** download a `db/kathavi-YYYY-MM-DD.sql.gz` from the backup bucket and `gunzip -c file | docker exec -i supabase-db psql -U postgres`.
 - **Update Supabase (monthly):** `cd /opt/supabase-src && git pull && cp -r docker/docker-compose.yml /opt/supabase/ && cd /opt/supabase && docker compose pull && docker compose up -d` — take a snapshot first.
-- **Cost (rough):** t3.large on-demand plus a 60 GB disk, Elastic IP, Amplify and small S3/SES use. Check the AWS Pricing Calculator for Mumbai, and consider a 1-year Savings Plan once traffic is steady.
+- **Cost (rough):** m7i-flex.large on-demand plus a 60 GB disk, Elastic IP, Amplify and small S3/SES use. Check the AWS Pricing Calculator for Mumbai, and consider a 1-year Savings Plan once traffic is steady.

@@ -19,9 +19,9 @@ Parameters:
     Description: Email for Let's Encrypt certificate notices
   InstanceType:
     Type: String
-    Default: t3.large
-    AllowedValues: [t3.medium, t3.large, t3.xlarge, m6i.large, m6i.xlarge]
-    Description: t3.large (8 GB) recommended; t3.medium (4 GB) is the bare minimum
+    Default: m7i-flex.large
+    AllowedValues: [m7i-flex.large, c7i-flex.large, t3.large, t3.xlarge, m6i.large, m6i.xlarge]
+    Description: m7i-flex.large (8 GB) is free-plan eligible and recommended; t3.large and bigger need a paid plan
   DiskSizeGb:
     Type: Number
     Default: 60
