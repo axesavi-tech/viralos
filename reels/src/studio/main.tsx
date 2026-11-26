@@ -6,6 +6,8 @@ import {plan} from '../engine/planner';
 import {THEMES, themeById} from '../themes';
 import {BRIEFS} from '../samples';
 import type {Brief, ReelSpec} from '../engine/schema';
+import {PostsPanel} from './PostsPanel';
+import {FORMAT_SIZE, type PostFormat, type PostSpec} from '../posts/schema';
 
 /**
  * Kathavi Reel Studio.
@@ -72,6 +74,8 @@ const App: React.FC = () => {
   const [order, setOrder] = useState<string[] | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<'reels' | 'posts'>(() => (new URLSearchParams(location.search).get('mode') === 'posts' ? 'posts' : 'reels'));
+  const [pformat, setPformat] = useState<PostFormat>('portrait');
   const player = useRef<PlayerRef>(null);
   const [vh, setVh] = useState(() => window.innerHeight);
   useEffect(() => { const f = () => setVh(window.innerHeight); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
@@ -167,6 +171,19 @@ const App: React.FC = () => {
     } finally { setBusy(false); }
   };
 
+  const savePost = async (p: PostSpec) => {
+    if (p.media.some((m) => m.src.startsWith('blob:'))) { setNote('Upload the photos to your Brand Vault before saving, so the post can be opened again later.'); return; }
+    setNote('Saving…');
+    try {
+      const id = 'post_' + Date.now().toString(36);
+      await api('/api/docs', {method: 'PUT', headers: {'content-type': 'application/json'}, body: JSON.stringify({id, data: {
+        type: 'post', title: `${p.brand.name} · ${themeById(p.themeId).name} · ${p.kind === 'carousel' ? 'carousel' : p.slides[0].layout} · ${FORMAT_SIZE[p.format].label}`,
+        brandName: p.brand.name, themeId: p.themeId, format: p.format, demo: preset !== 'mine', spec: p, savedAt: new Date().toISOString(),
+      }})});
+      setNote('Post saved to your workspace.');
+    } catch (e: any) { setNote(`Could not save: ${e.message}`); }
+  };
+
   const copy = async () => {
     if (!spec) return;
     const text = JSON.stringify(spec, null, 2);
@@ -225,6 +242,13 @@ const App: React.FC = () => {
       </aside>
 
       <main>
+        <div className="modes" role="tablist" aria-label="What to make">
+          <button role="tab" aria-selected={mode === 'reels'} className={mode === 'reels' ? 'on' : ''} onClick={() => setMode('reels')}>Reels</button>
+          <button role="tab" aria-selected={mode === 'posts'} className={mode === 'posts' ? 'on' : ''} onClick={() => setMode('posts')}>Posts, carousels &amp; stories</button>
+        </div>
+        {mode === 'posts' ? (
+          d.media.length ? <PostsPanel d={d} abs={abs} fontBase={`${base}/fonts`} format={pformat} setNote={setNote} onSave={EMBED ? savePost : undefined} /> : <div className="stage" style={{width: pw, height: ph}}><div className="empty"><p>{planned.err}</p></div></div>
+        ) : (
         <div className="stage" style={{width: pw, height: ph}}>
           {playable ? (
             <Player ref={player} component={Reel as any} inputProps={playable as any} durationInFrames={dur} fps={30} compositionWidth={1080} compositionHeight={1920}
@@ -241,15 +265,21 @@ const App: React.FC = () => {
             </div>
           )}
         </div>
+        )}
         <div className="meta" aria-live="polite">{note || (spec ? `${(dur / 30).toFixed(1)}s · ${spec.scenes.length} scenes · 1080×1920 · 30fps` : '')}</div>
       </main>
 
       <aside className="right">
         <section>
+          {mode === 'posts' ? (<>
+            <h3>Format</h3>
+            <div className="seg">{(Object.keys(FORMAT_SIZE) as PostFormat[]).map((f) => <button key={f} className={f === pformat ? 'on' : ''} onClick={() => setPformat(f)}>{FORMAT_SIZE[f].label}</button>)}</div>
+          </>) : (<>
           <h3>Length</h3>
           <div className="seg">{DURS.map((s) => <button key={s} className={s === d.durationSec ? 'on' : ''} onClick={() => { setOrder(null); set({durationSec: s}); }}>{s}s</button>)}</div>
-          <h3>Motion intensity</h3>
-          <input type="range" min={0.4} max={1.6} step={0.1} value={d.intensity} aria-label="Motion intensity" onChange={(e) => set({intensity: Number(e.target.value)})} />
+          </>)}
+          {mode === 'posts' ? null : <h3>Motion intensity</h3>}
+          {mode === 'posts' ? null : <input type="range" min={0.4} max={1.6} step={0.1} value={d.intensity} aria-label="Motion intensity" onChange={(e) => set({intensity: Number(e.target.value)})} />}
           <label className="check"><input type="checkbox" checked={d.showSafeZones} onChange={(e) => set({showSafeZones: e.target.checked})} />Show Instagram safe zones</label>
         </section>
         <section>
@@ -267,7 +297,7 @@ const App: React.FC = () => {
           <label>Button<input maxLength={40} value={d.cta} onChange={(e) => set({cta: e.target.value})} /></label>
           <p className="hint">Price and offer appear only when you fill them in.</p>
         </section>
-        <section>
+        {mode === 'posts' ? null : <section>
           <h3>Scenes</h3>
           <ol className="scenes">
             {spec?.scenes.map((s, i) => (
@@ -281,7 +311,7 @@ const App: React.FC = () => {
           </ol>
           {EMBED ? <button className="primary" onClick={save} disabled={!spec || busy}>Save reel to workspace</button> : null}
           <button className={EMBED ? 'secondary' : 'primary'} onClick={copy} disabled={!spec}>Copy reel spec (JSON)</button>
-        </section>
+        </section>}
       </aside>
     </div>
   );

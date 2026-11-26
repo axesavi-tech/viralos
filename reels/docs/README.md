@@ -18,6 +18,19 @@ The Remotion-based Instagram Reel theme and template engine, and the Reel Studio
 | Demo brands | `src/samples.ts` | Iraaya (own Shopify photos, loaded from its store), Kaapiyo, Ojasri, Dhaavo, Mittiko (Unsplash photos) |
 | QA | `scripts/qa.mjs`, `scripts/contrast.ts`, `scripts/blank.py` | See "Testing" |
 
+## Posts, carousels and stories
+
+`src/posts/` builds static posts from the same brief and the same 13 themes, so a brand's posts match its reels.
+
+| Part | Where | Notes |
+|---|---|---|
+| Formats | `posts/schema.ts` | Post 4:5 (1080×1350), Post 1:1 (1080×1080), Story 9:16 (1080×1920, Instagram safe zones) |
+| Layouts | `posts/Post.tsx` | 11: hero photo, magazine cover, photo and story, product card, three reasons, big statement, offer, photo grid, gallery frame, quote, call to action |
+| Planner | `posts/plan.ts` | Each theme ranks the layouts that suit it; the planner fills them from the brief, skips any layout the brief can't honestly fill (no offer → no offer post, no price → no price tag) and builds one carousel (cover → story → reasons → product → offer → call to action). Writes a caption and alt text for every slide. |
+| Studio | `studio/PostsPanel.tsx` | "Posts, carousels & stories" tab: the set for the brand, slide pager, PNG download at full size with the theme's fonts embedded, copy caption, save to workspace (`vx_docs`, type `post`). |
+| Server render | `Root.tsx` `Post` still | `npx remotion still src/Root.tsx Post out.png --props='{"spec":…,"slide":0}'` |
+| QA | `npm run posts:qa` | Renders every demo brand's set in its theme (plus square and story for one); 153 images, no text overflow, no blank images (26 Nov) |
+
 ## The four layers
 
 A reel is **theme × layout × content × motion**, and each is swappable on its own.
