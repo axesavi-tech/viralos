@@ -9,8 +9,9 @@ export class HttpError extends Error { constructor(public status: number, messag
 /** Signed-in user + their workspace (created on first use) + role. */
 export async function ctx(req?: Request): Promise<Ctx> {
   const sb = await supabaseServer();
-  const { data } = await sb.auth.getUser();
-  if (!data.user) throw new HttpError(401, "Sign in to continue.", "unauthenticated");
+  const user = await currentUser(sb);
+  if (!user) throw new HttpError(401, "Sign in to continue.", "unauthenticated");
+  const data = { user };
   let ws = req?.headers.get("x-workspace") || "";
   if (!/^[0-9a-f-]{36}$/i.test(ws)) {
     const r = await sb.rpc("vx_bootstrap");
@@ -20,6 +21,22 @@ export async function ctx(req?: Request): Promise<Ctx> {
   const m = await sb.from("vx_members").select("role").eq("workspace_id", ws).eq("user_id", data.user.id).maybeSingle();
   if (!m.data) throw new HttpError(403, "You are not a member of this workspace.", "forbidden");
   return { sb, user: { id: data.user.id, email: data.user.email ?? undefined }, ws, role: m.data.role as string };
+}
+
+/**
+ * The signed-in user. A network hiccup between the app and the sign-in server is not a sign-out:
+ * retry once, then answer 503 so the studio keeps the person signed in instead of sending them to the login page.
+ */
+export async function currentUser(sb: Awaited<ReturnType<typeof supabaseServer>>) {
+  for (let i = 0; i < 2; i++) {
+    const { data, error } = await sb.auth.getUser();
+    if (data.user) return data.user;
+    const st = (error as any)?.status;
+    const transient = !!error && (!st || st >= 500 || /fetch|network|timeout|ECONN|socket/i.test(error.message || ""));
+    if (!transient) return null;
+    if (i === 0) await new Promise((r) => setTimeout(r, 400));
+  }
+  throw new HttpError(503, "The sign-in service did not answer. Try again in a moment; you are still signed in.", "auth_unavailable");
 }
 
 export const canWrite = (c: Ctx) => !["viewer", "analyst"].includes(c.role);

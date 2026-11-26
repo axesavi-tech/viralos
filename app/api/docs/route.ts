@@ -14,7 +14,10 @@ export const PUT = route(async (req: Request) => {
   const c = await ctx(req); requireWrite(c);
   const b = await req.json();
   if (!b.id || typeof b.data !== "object") throw new HttpError(400, "Bad document");
-  if (JSON.stringify(b.data).length > 900_000) throw new HttpError(413, "This item is too large to save.");
+  // Postgres jsonb refuses NUL characters and lone surrogates (they arrive in text copied from websites): strip them
+  const raw = JSON.stringify(b.data).replace(/\\u0000/g, "").replace(/\\ud[89ab][0-9a-f]{2}(?!\\ud[c-f])/gi, "").replace(/(?<!\\ud[89ab][0-9a-f]{2})\\ud[c-f][0-9a-f]{2}/gi, "");
+  if (raw.length > 900_000) throw new HttpError(413, "This item is too large to save.");
+  b.data = JSON.parse(raw);
   const r = await c.sb.from("vx_docs").upsert({ workspace_id: c.ws, id: String(b.id).slice(0, 200), type: b.data.type || null, data: b.data, updated_at: new Date().toISOString(), updated_by: c.user.id });
   if (r.error) throw new Error(r.error.message);
   return json({ ok: true });

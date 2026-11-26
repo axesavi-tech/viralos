@@ -12,7 +12,10 @@ export async function middleware(req: NextRequest) {
       setAll: (list) => { list.forEach(({ name, value }) => req.cookies.set(name, value)); res = NextResponse.next({ request: req }); list.forEach(({ name, value, options }) => res.cookies.set(name, value, options)); },
     },
   });
-  const { data } = await sb.auth.getUser();
+  const { data, error } = await sb.auth.getUser();
+  // a network hiccup reaching the sign-in server is not a sign-out: let the page load, the APIs check again
+  const st = (error as any)?.status;
+  if (!data.user && error && (!st || st >= 500)) return res;
   const path = req.nextUrl.pathname;
   const isPublic = path === "/" || PUBLIC.slice(1).some((p) => path.startsWith(p)) || path.startsWith("/api");
   if (!data.user && !isPublic) { const url = req.nextUrl.clone(); url.pathname = "/login"; url.search = "?next=" + encodeURIComponent(path); return NextResponse.redirect(url); }
