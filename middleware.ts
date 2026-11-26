@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /* Pages anyone can open; everything under /studio and the app APIs needs a session (APIs answer 401 themselves). */
-const PUBLIC = ["/", "/login", "/auth", "/legal", "/pricing"];
+const PUBLIC = ["/", "/login", "/auth", "/legal", "/pricing", "/media"];
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req });
@@ -18,4 +18,4 @@ export async function middleware(req: NextRequest) {
   if (!data.user && !isPublic) { const url = req.nextUrl.clone(); url.pathname = "/login"; url.search = "?next=" + encodeURIComponent(path); return NextResponse.redirect(url); }
   return res;
 }
-export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|webp|woff2)$).*)"] };
+export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|webp|woff2|mp4|webm)$).*)"] };

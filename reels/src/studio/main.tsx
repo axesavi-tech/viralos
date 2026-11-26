@@ -200,7 +200,8 @@ const App: React.FC = () => {
           <div className="themes">
             {THEMES.map((t) => (
               <button key={t.id} className={t.id === d.themeId ? 'on' : ''} title={t.description} onClick={() => { setOrder(null); set({themeId: t.id}); }}>
-                {t.name}{is3D(t.id) ? <em>3D</em> : null}
+                <img src={`${base}/themes/${t.id}.jpg`} alt="" loading="lazy" />
+                <span>{t.name}{is3D(t.id) ? <em>3D</em> : null}</span>
               </button>
             ))}
           </div>
