@@ -32,10 +32,15 @@ const Store={mode:'local',db:null,uid:null,docs:new Map(),timers:{},chain:{},ass
   put(doc){doc.updated=Date.now();this.docs.set(doc.id,doc);clearTimeout(this.timers[doc.id]);this.timers[doc.id]=setTimeout(()=>this.flush(doc.id),500)},
   flush(k){const doc=this.docs.get(k);
     if(this.mode==='cloud'){const ref=this.db.collection('data/users/'+this.uid).doc(k);
-      this.chain[k]=(this.chain[k]||Promise.resolve()).then(()=>doc?ref.set(JSON.parse(JSON.stringify(doc))):ref.delete()).catch(e=>{if(e&&e.code==='quota_exceeded')notify('Storage is full. Delete an old campaign to save new work.')});}
+      this.chain[k]=(this.chain[k]||Promise.resolve()).then(()=>doc?ref.set(JSON.parse(JSON.stringify(doc))):ref.delete()).then(()=>{if(this.failed&&this.failed[k]){delete this.failed[k];if(!Object.keys(this.failed).length)notify('Saved.')}}).catch(e=>{
+        /* never lose work silently: say so, retry with back-off, and warn before leaving the page while anything is unsaved */
+        if(e&&e.code==='quota_exceeded'){notify('Storage is full. Delete an old campaign to save new work.');return}
+        this.failed=this.failed||{};const n=(this.failed[k]||0)+1;this.failed[k]=n;if(e&&e.code==='unauthenticated')return;
+        notify(n<5?'Could not save your latest change. Retrying…':'Your latest changes are not saved. Check your connection; Kathavi keeps retrying.');setTimeout(()=>{if(this.failed[k])this.flush(k)},Math.min(60000,3000*2**n))});}
     else{try{localStorage.setItem('viralos.v1',JSON.stringify(Object.fromEntries(this.docs)))}catch(e){notify('This browser could not save. Export a backup from Settings.')}}},
   del(k){this.docs.delete(k);clearTimeout(this.timers[k]);this.flush(k)}
 };
+addEventListener('beforeunload',e=>{if(Store.failed&&Object.keys(Store.failed).length){e.preventDefault();e.returnValue=''}});
 const Session={assets:new Map(),voices:new Map(),files:new Map()};
 const pref={get(k,d){try{return JSON.parse(localStorage.getItem('viralos.pref.'+k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem('viralos.pref.'+k,JSON.stringify(v))}catch(e){}}};
 
