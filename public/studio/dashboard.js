@@ -53,8 +53,10 @@ function posMap(m,b,col){if(!m||!m.points)return'<p class="vx-muted">No map yet.
    :k==='brand'?`<g ${a}><circle cx="${x}" cy="${y}" r="16" fill="${col}" fill-opacity=".18" class="kd-pulse"/><circle cx="${x}" cy="${y}" r="8" fill="${col}"/><text x="${x}" y="${y-16}" text-anchor="middle" class="kd-pl kd-me">${h(p.name||b.name)}</text></g>`
    :`<g ${a}><circle cx="${x}" cy="${y}" r="6" fill="var(--vx-mute)"/><text x="${x+10}" y="${y+4}" class="kd-pl">${h(p.name)}</text></g>`}).join('')}</svg>`}
 function riskGrid(risks,col){const cell=56,P=34;const g=[];for(let l=1;l<=5;l++)for(let i=1;i<=5;i++){const heat=(l*i)/25;g.push(`<rect x="${P+(i-1)*cell}" y="${P+(5-l)*cell}" width="${cell-3}" height="${cell-3}" rx="6" fill="${col}" fill-opacity="${.04+heat*.32}"/>`)}
- const dots=risks.map((r,n)=>{const i=clamp(+r.impact||1,1,5),l=clamp(+r.likelihood||1,1,5);const same=risks.slice(0,n).filter(x=>x.impact==r.impact&&x.likelihood==r.likelihood).length;
-  return`<g ${kx({title:r.risk,value:`Likelihood ${l}/5 · impact ${i}/5`,why:r.mitigation?'Mitigation: '+r.mitigation:'',sp:'quality',stage:'learn',insight:'risk'})}><circle cx="${P+(i-.5)*cell+same*12-6}" cy="${P+(5-l+.5)*cell}" r="11" fill="var(--vx-ink)"/><text x="${P+(i-.5)*cell+same*12-6}" y="${P+(5-l+.5)*cell+4}" text-anchor="middle" class="kd-rn">${n+1}</text></g>`}).join('');
+ const dots=risks.map((r,n)=>{const i=clamp(+r.impact||1,1,5),l=clamp(+r.likelihood||1,1,5);const sameCell=x=>clamp(+x.impact||1,1,5)===i&&clamp(+x.likelihood||1,1,5)===l;const same=risks.slice(0,n).filter(sameCell).length,k=risks.filter(sameCell).length;
+  /* risks sharing a cell sit side by side (two rows when there are more than three) instead of on top of each other */
+  const row=k>3?Math.floor(same/Math.ceil(k/2)):0,colN=k>3?Math.ceil(k/2):k,ci=k>3?same%colN:same,rad=k>2?9:11,dx=(ci-(colN-1)/2)*(rad*2+2),dy=k>3?(row-.5)*(rad*2+2):0;
+  return`<g ${kx({title:r.risk,value:`Likelihood ${l}/5 · impact ${i}/5`,why:r.mitigation?'Mitigation: '+r.mitigation:'',sp:'quality',stage:'learn',insight:'risk'})}><circle cx="${P+(i-.5)*cell+dx}" cy="${P+(5-l+.5)*cell+dy}" r="${rad}" fill="var(--vx-ink)"/><text x="${P+(i-.5)*cell+dx}" y="${P+(5-l+.5)*cell+dy+4}" text-anchor="middle" class="kd-rn">${n+1}</text></g>`}).join('');
  return`<svg viewBox="0 0 ${P+5*cell+10} ${P+5*cell+30}" class="kd-risk" role="img" aria-label="Risk matrix">${g.join('')}${dots}
  <text x="${P}" y="${P+5*cell+22}" class="kd-ax">Impact →</text><text x="12" y="${P+5*cell}" class="kd-ax" transform="rotate(-90 12 ${P+5*cell})">Likelihood →</text></svg>`}
 function donut(parts,cols){const tot=parts.reduce((a,x)=>a+x.v,0)||1;let acc=0;const r=70,c=2*Math.PI*r;
@@ -198,6 +200,10 @@ function openKX(id){const o=KX[id];if(!o)return;const b=brand();const S=SPEC[o.s
 document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-kx]');if(t&&q('#view-dashboard')&&q('#view-dashboard').contains(t)){e.preventDefault();openKX(t.dataset.kx)}});
 document.addEventListener('keydown',e=>{const t=e.target.closest&&e.target.closest('[data-kx]');if(t&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openKX(t.dataset.kx)}if(e.key==='Escape'){const p=q('#kxPanel');p&&p.classList.remove('on')}});
 ACT.kxclose=()=>{const p=q('#kxPanel');p&&p.classList.remove('on')};
+/* the explain panel lives outside the studio root, so its buttons and links are wired here */
+document.addEventListener('click',e=>{const p=q('#kxPanel');if(!p||!e.target.closest||!p.contains(e.target))return;
+ const g=e.target.closest('[data-go]');if(g){e.preventDefault();ACT.kxclose();V.go(g.dataset.go);return}
+ const a=e.target.closest('[data-act]');const fn=a&&ACT[a.dataset.act];if(fn){e.preventDefault();e.stopPropagation();fn(a,e)}});
 function saveEdit(id,ripple){const o=KX[id],b=brand(),F=fld(o.key),t=q('#kxEdit');if(!F||!t)return;const raw=t.value.trim();if(!raw){notify('Write something first.');return}
  const v=F.f.t==='text'?raw:F.f.t==='palette'?raw.split(/\n|,(?=\s*#)/).map(l=>{const m=l.match(/#[0-9a-f]{6}/i);return m?{hex:m[0].toUpperCase(),role:l.replace(m[0],'').replace(/^[,\s]+/,'').trim().slice(0,30)}:null}).filter(Boolean):F.f.t==='themes'?raw.split(/[\n,]/).map(x=>x.trim().toLowerCase().replace(/\s+/g,'-')).filter(x=>J.THEME_IDS.includes(x)):V.list(raw.split(/\n|;\s/));
  if(Array.isArray(v)&&!v.length){notify('That format was not recognised.');return}
