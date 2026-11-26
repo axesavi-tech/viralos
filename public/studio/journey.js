@@ -177,14 +177,24 @@ function save(b){sync(b);Store.put(b);try{V.paintCredits()}catch(e){}}
 /* each decision trimmed so late steps (with 60+ decisions) still answer within the time limit */
 function genomeText(b,limit=70,each=200){const lines=[];ALL_D.forEach(d=>d.F.forEach(f=>{const v=valOf(b,fk(d,f));if(v!=null){const t=show(f,v);lines.push(`${d.title} / ${f.l}: ${t.length>each?t.slice(0,each)+'…':t}`)}}));return lines.slice(0,limit).join('\n')||'(no decisions yet)'}
 function fieldSpec(f){return`- "${f.k}" (${f.t==='text'?'string':f.t==='list'?'array of strings':f.t==='palette'?'array of {"hex":"#RRGGBB","role":"primary|accent|light background|dark text|support"}':'array of theme ids'}): ${f.l}. ${f.g}`}
+/* the live market research every specialist reads (searched on the web, with sources) */
+function dossierText(g){const r=g.research&&g.research.data;if(!r)return'';const L=[];
+ if(r.summary)L.push('Summary: '+r.summary);
+ (r.competitors||[]).slice(0,6).forEach(c=>L.push(`Competitor: ${c.name} — ${c.positioning||''}${c.price_band?' · price '+c.price_band:''}${c.channels?' · '+c.channels:''}`));
+ (r.price_bands||[]).slice(0,4).forEach(x=>L.push(`Price band: ${x.band} ${x.range||''} ${x.examples?'('+x.examples+')':''}`));
+ (r.trends||[]).slice(0,5).forEach(t=>L.push(`Trend: ${t.trend}${t.evidence?' — '+t.evidence:''}`));
+ (r.audience_signals||[]).slice(0,4).forEach(a=>L.push('Audience signal: '+a));
+ (r.whitespace||[]).slice(0,3).forEach(w=>L.push('White space: '+w));
+ return 'LIVE MARKET RESEARCH (searched on the web for this brand; cite it, and treat anything not in it as a hypothesis):\n'+L.join('\n').slice(0,3800)}
 function prompt(b,d,only){const g=G(b),S=SPEC[d.sp];const F=only?d.F.filter(f=>f.k===only):d.F;
  const rejected=F.map(f=>{const r=(g.f[fk(d,f)]||{}).rejected||[];return r.length?`${f.k}: ${r.map(x=>show(f,x)).join(' | ')}`:''}).filter(Boolean).join('\n');
  return`You are Kathavi's ${S.n}, a world-class practitioner. Mission: ${S.mission} Methods: ${S.method} Standard: ${S.asks}
 You are helping a founder build a ${g.type||'consumer'} brand on digital platforms (branding, storytelling, marketing; not choosing what to manufacture).
 THE OWNER'S IDEA, IN THEIR WORDS: ${g.idea||b.desc||b.name}
 ${b.name?'CURRENT BRAND NAME: '+b.name:''}
-DECISIONS THE OWNER HAS ACCEPTED (fixed; build on them and stay consistent):
+DECISIONS SO FAR (fixed; build on them and stay consistent):
 ${genomeText(b)}
+${dossierText(g)}
 ${g.inputs[d.id]?'OWNER DIRECTION FOR THIS STEP: '+g.inputs[d.id]:''}
 ${rejected?'THE OWNER REJECTED THESE BEFORE (do not propose them or near-copies):\n'+rejected:''}
 TASK: ${d.title}. ${d.desc}
@@ -207,18 +217,18 @@ async function siteFor(b,d){const g=G(b);const src=[g.inputs[d.id]||'',g.idea||'
  try{const r=await VX.api('/api/web/read',{json:{url}});const clean=x=>String(x||'').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]/g,' ').replace(/[\uD800-\uDFFF]/g,'');const text=clean((r.pages||[]).map(p=>`# ${p.title||p.url}\n${String(p.text||'').slice(0,2500)}`).join('\n\n')).slice(0,7000);
   const site={url,at:Date.now(),title:r.title||'',desc:r.description||'',colors:(r.colors||[]).slice(0,6),text};g.sites={...(g.sites||{}),[url]:site};Store.put(b);return site}
  catch(e){return{url,at:0,error:e&&e.message||'Could not read that website'}}}
-async function recommend(d,only){const b=brand();if(!b)return;const g=G(b);BUSY[d.id]=only||'all';rerender();
+async function recommend(d,only,o={}){const b=o.b||brand();if(!b)return;const g=G(b);BUSY[d.id]=only||'all';if(!o.quiet)rerender();
  try{const site=d.stage&&d.stage.key==='learn'?null:await siteFor(b,d);const siteText=site&&site.text?site.text.slice(0,d.stage&&d.stage.key==='discover'?7000:3000):'';
   const full=prompt(b,d,only)+(site&&site.text?`\nWEBSITE ${site.url}, READ LIVE JUST NOW (use its real facts, words, products and tone; never claim anything it does not say):\nTitle: ${site.title}\nDescription: ${site.desc}\nColours seen: ${(site.colors||[]).join(', ')}\n${siteText}`:site&&site.error?`\nThe owner mentioned ${site.url} but it could not be read (${site.error}). Say so in your note.`:'');
   /* a step that runs past the time limit is refunded; ask the faster model once instead of failing */
   let v;try{v=await askJSON('journey',full,{tier:'default'})}catch(e){if(e&&e.code==='timeout'){notify('That took too long, so a faster specialist model is finishing it.');v=await askJSON('journey',full,{tier:'quick'})}else throw e}
   const out=v.fields||{};
-  (only?d.F.filter(f=>f.k===only):d.F).forEach(f=>{const r=out[f.k];if(!r)return;const key=fk(d,f),cur=g.f[key]||{};if(decided(cur)&&!only)return;
+  (only?d.F.filter(f=>f.k===only):d.F).forEach(f=>{const r=out[f.k];if(!r)return;const key=fk(d,f),cur=g.f[key]||{};if(decided(cur)&&!only&&!(o.force&&cur.by!=='you'))return;if(cur.by==='you'&&o.force)return;
    const val=coerce(f,r.value);if(val==null||(Array.isArray(val)&&!val.length))return;
-   g.f[key]={...cur,value:val,status:'proposed',by:'ai',sp:d.sp,why:String(r.why||'').slice(0,300),alts:(Array.isArray(r.alternatives)?r.alternatives:[]).map(a=>coerce(f,a)).filter(a=>a!=null&&(!Array.isArray(a)||a.length)).slice(0,3),at:Date.now()}});
+   g.f[key]={...cur,value:val,status:o.auto?'accepted':'proposed',auto:!!o.auto,by:'ai',sp:d.sp,why:String(r.why||'').slice(0,300),alts:(Array.isArray(r.alternatives)?r.alternatives:[]).map(a=>coerce(f,a)).filter(a=>a!=null&&(!Array.isArray(a)||a.length)).slice(0,3),at:Date.now()}});
   g.notes[d.id]={note:String(v.note||'').slice(0,300),question:String(v.question||'').slice(0,200),site:site&&site.text?site.url:'',at:Date.now()};
   g.log.unshift({at:Date.now(),d:d.id,what:'recommended',sp:d.sp});g.log=g.log.slice(0,40);save(b)}
- catch(e){notify(errText(e))}finally{delete BUSY[d.id];rerender()}}
+ catch(e){if(o.auto)throw e;notify(errText(e))}finally{delete BUSY[d.id];if(!o.quiet)rerender()}}
 
 /* ---------------- views ---------------- */
 const av=(k,sz='')=>{const S=SPEC[k];return`<span class="jx-av ${sz}" style="--c:${S.c}" title="${h(S.n)}" aria-hidden="true">${S.i}</span>`};
@@ -233,7 +243,8 @@ function startView(){return head('Start your brand','Describe your idea in a lin
   <fieldset class="jx-type"><legend>It is a</legend>${[['physical','Physical product'],['digital','Digital product or app'],['service','Service']].map(([v,l],i)=>`<label><input type="radio" name="type" value="${v}" ${i===0?'checked':''}><span>${l}</span></label>`).join('')}</fieldset>
   <label class="jx-sm" for="jx-name">Brand name <span class="vx-muted">(optional: leave blank and we will suggest names)</span></label>
   <input id="jx-name" name="name" maxlength="60" autocomplete="off">
-  <div class="vx-row"><button class="vx-btn pri" type="submit">Start my brand</button><span class="vx-small vx-muted">Your Market &amp; Audience Analyst drafts the whole Discover stage (4 steps, about ${4*COST()} credits). You approve every decision.</span></div>
+  <label class="jx-auto"><input type="checkbox" name="auto" checked><span><b>Build my whole brand now</b> · live market research, all 7 stages decided by the specialists, and your Brand Dashboard. About 4 minutes and ${25+20*COST()+COST()} credits. You can change anything afterwards.</span></label>
+  <div class="vx-row"><button class="vx-btn pri" type="submit">Start my brand</button><span class="vx-small vx-muted">Untick to go step by step: the Discover stage first (about ${4*COST()} credits), approving each decision.</span></div>
  </form>
  <div class="vx-card jx-how"><h2>How it works</h2><ol class="jx-steps">${STAGES.map(s=>`<li><b>${s.n}. ${s.name}</b><span>${h(s.q)}</span></li>`).join('')}</ol>
  <p class="vx-small vx-muted">At every step a specialist recommends, explains why and offers alternatives. You accept, edit, reject or write your own. Accepted decisions become your Brand Genome, and every studio tool uses it.</p></div>`}
@@ -327,9 +338,61 @@ V.FORM.jstart=async f=>{const fd=new FormData(f);const idea=String(fd.get('idea'
   genome:{v:1,type,idea,f:{},inputs:{},notes:{},log:[]}};
  if(!name){b.name='New brand'}
  if(name){b.genome.f['naming.name']={value:name,status:'edited',by:'you',at:Date.now()}}
- V.cur.jstart=false;Store.put(b);V.cur.brand=b.id;try{localStorage.setItem('viralos.pref.brand',JSON.stringify(b.id))}catch(e){}void all;go('discover');
+ V.cur.jstart=false;Store.put(b);V.cur.brand=b.id;try{localStorage.setItem('viralos.pref.brand',JSON.stringify(b.id))}catch(e){}void all;
+ if(fd.get('auto')){go('dashboard');await autopilot(b);return}
+ go('discover');
  /* one line in, a full first prescription out: the whole Discover stage, idea brief first so the rest builds on it */
  for(const d of STAGES[0].D)await recommend(d)};
+
+
+/* ================= Autopilot: one line in, a whole brand out =================
+ * 1. the Market & Audience Analyst researches the market live on the web (sources kept);
+ * 2. every stage is decided in order, the steps of a stage in parallel, each building on what came before;
+ * 3. the Chief Brand Architect reads everything and writes the insights behind the Brand Dashboard.
+ * Every decision stays editable; a change re-runs what depends on it. */
+const RUN={};// per brand id: {phase, stage, done, total, error, at}
+async function aiJob(input,action,opts){let r=await VX.api('/api/ai',{json:{input,action,opts}});if(!r.job)return r;const t0=Date.now();let wait=1500;
+ for(;;){await new Promise(x=>setTimeout(x,wait));wait=Math.min(3000,wait+300);let j;try{j=await VX.api('/api/jobs/'+r.job)}catch(e){if(Date.now()-t0<330000)continue;throw e}
+  if(j.status==='done')return{...j.result,credits:r.credits};if(j.status==='failed')throw{code:'provider_error',message:j.error||'Research failed'};if(Date.now()-t0>330000)throw{code:'timeout'}}}
+const parseJ=t=>{const a=String(t||'').indexOf('{'),z=String(t||'').lastIndexOf('}');return JSON.parse(String(t).slice(a,z+1))};
+async function researchMarket(b){const g=G(b);
+ const p=`You are Kathavi's Market & Audience Analyst with live web search. Research the market for this brand idea, searching several times (competitor brand sites, marketplaces, reputable news and industry sources). India unless the idea says otherwise.
+IDEA: ${g.idea||b.desc} ${b.name&&b.name!=='New brand'?'(brand name: '+b.name+')':''} · type: ${g.type||'physical'}
+Report only what your searches support; say "not found" rather than guess. Never invent numbers or prices.
+Return ONLY JSON: {"summary":"under 90 words","competitors":[{"name":"","positioning":"under 18 words","price_band":"as published, or empty","channels":"","url":"https://..."}],"price_bands":[{"band":"entry|mid|premium|luxury","range":"as found","examples":""}],"trends":[{"trend":"","evidence":"under 20 words","url":"https://..."}],"audience_signals":["under 20 words each"],"whitespace":["gaps no competitor owns, under 20 words"]}
+At most 6 competitors, 4 price bands, 5 trends, 4 audience signals, 3 white spaces.`;
+ const r=await aiJob(p,'research',{research:true,searches:8,maxTokens:6000});let data={};try{data=parseJ(r.text)}catch(e){data={summary:String(r.text||'').slice(0,600)}}
+ g.research={at:Date.now(),data,sources:(r.sources||[]).slice(0,20),searches:r.searches||0};save(b);return g.research}
+async function writeInsights(b){const g=G(b);
+ const p=`You are Kathavi's Chief Brand Architect. Read every decision and the live research, then write the insight layer of the brand's dashboard: sharp, specific, non-obvious, defensible. Scores are your reasoned judgement (say why); never invent market numbers.
+BRAND: ${b.name} · ${g.type||'physical'} · idea: ${g.idea||b.desc}
+DECISIONS:
+${genomeText(b,80,160)}
+${dossierText(g)}
+Return ONLY JSON:
+{"headline":"the brand thesis in under 16 words",
+"signature_insight":{"title":"under 8 words","insight":"under 35 words: something the founder would not have seen","so_what":"under 25 words: what to do about it"},
+"opportunities":[{"title":"under 8 words","insight":"under 30 words","evidence":"which decision or research point it rests on","action":"under 18 words"}],
+"strength":[{"dimension":"Distinctiveness|Clarity|Credibility|Emotional pull|Market timing|Channel fit|Consistency","score":0,"why":"under 22 words"}],
+"positioning_map":{"x":{"label":"axis that matters to buyers","low":"","high":""},"y":{"label":"","low":"","high":""},"points":[{"name":"","x":0,"y":0,"kind":"brand|competitor|gap","why":"under 18 words"}]},
+"risks":[{"risk":"under 14 words","likelihood":1,"impact":1,"mitigation":"under 18 words"}],
+"readiness":{"score":0,"blockers":["under 14 words"],"next":["under 14 words"]},
+"proof":[{"claim":"under 12 words","evidence":"what proves it","status":"have|need"}],
+"plan90":[{"weeks":"1-2","focus":"under 10 words","metric":"under 8 words"}],
+"why":{"headline":"under 30 words","readiness":"under 30 words","map":"under 30 words"}}
+3 opportunities, all 7 strength dimensions (0-100), map points 0-100 with the brand, 3-6 competitors from the research and 1-2 gaps, 4-6 risks (1-5 scales), 3-6 proof items, 6 plan rows covering 12 weeks.`;
+ const v=await askJSON('journey',p,{tier:'default'});g.insights={...v,at:Date.now()};save(b);return g.insights}
+async function runWave(b,ds,o){await Promise.all(ds.map(d=>recommend(d,null,{...o,b,auto:true,quiet:true}).then(()=>{RUN[b.id].done++;paint()}).catch(e=>{RUN[b.id].errors=(RUN[b.id].errors||0)+1;RUN[b.id].last=errText(e);paint()})))}
+const paint=()=>{if(['dashboard','home'].includes(V.cur.view))rerender()};
+async function autopilot(b,from=0,o={}){if(RUN[b.id]&&RUN[b.id].phase&&RUN[b.id].phase!=='done'&&RUN[b.id].phase!=='error')return;
+ const stages=STAGES.slice(from);const R=RUN[b.id]={phase:'research',stage:null,done:0,total:stages.reduce((a,s)=>a+s.D.length,0),errors:0,at:Date.now()};paint();
+ try{if(!G(b).research||o.research){try{await researchMarket(b)}catch(e){R.last='Live research was not available ('+errText(e)+'); the specialists continued from your idea.'}}
+  for(const s of stages){R.phase='decide';R.stage=s.key;paint();await runWave(b,s.D,{force:!!o.force})}
+  R.phase='insights';R.stage=null;paint();await writeInsights(b);R.phase='done';G(b).built=Date.now();save(b)}
+ catch(e){R.phase='error';R.last=errText(e)}paint()}
+/* a change ripples forward: every later stage (and the insights) is re-decided, keeping everything you wrote yourself */
+async function recomputeFrom(b,stageKey){const i=Math.max(0,STAGES.findIndex(s=>s.key===stageKey));return autopilot(b,i,{force:true})}
+window.KATHAVI_J={STAGES,ALL_D,SPEC,THEME_IDS,THEME_NAME,G,valOf,fk,show,decided,dById,save,recommend,autopilot,recomputeFrom,researchMarket,writeInsights,RUN,av,dossierText,coerce,genomeText};
 
 /* every studio prompt (campaigns, copy, ads, calendar) reads the Genome through brandBrief */
 /* kept short: every studio prompt carries it, and long prompts are slower and costlier */
