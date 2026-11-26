@@ -2,7 +2,10 @@
 # Run on the Kathavi server (Session Manager):  sudo bash install.sh
 # Needs the Anthropic key in SSM Parameter Store as /kathavi/app/anthropic-key (SecureString).
 set -euo pipefail
-R=$(curl -s http://169.254.169.254/latest/meta-data/placement/region || echo ap-south-1)
+# region from instance metadata (IMDSv2 needs a token); Mumbai if that fails
+TOK=$(curl -s -m 3 -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60" || true)
+R=$(curl -s -m 3 -H "X-aws-ec2-metadata-token: $TOK" http://169.254.169.254/latest/meta-data/placement/region || true)
+[[ "$R" =~ ^[a-z]{2}-[a-z]+-[0-9]$ ]] || R=ap-south-1
 A=/usr/local/bin/aws
 mkdir -p /opt/kathavi-worker && cd /opt/kathavi-worker
 curl -fsSL -o worker.mjs https://raw.githubusercontent.com/axesavi-tech/viralos/main/infra/aws/ai-worker/worker.mjs
