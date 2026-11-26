@@ -42,7 +42,10 @@ async function callClaude(req) {
     const text = blocks.map((b) => b.text).join("");
     // web research: keep the pages Claude cited so the studio can show its sources
     const sources = new Map();
-    blocks.forEach((b) => (b.citations || []).forEach((c) => { if (c.url && /^https:\/\//.test(c.url)) sources.set(c.url, { url: c.url, title: c.title || c.url }); }));
+    const keep = (url, title) => { if (url && /^https:\/\//.test(url) && !sources.has(url)) sources.set(url, { url, title: title || url }); };
+    blocks.forEach((b) => (b.citations || []).forEach((c) => keep(c.url, c.title)));
+    // a JSON answer rarely carries citations, so also keep the pages the searches actually returned
+    (j.content || []).filter((b) => b.type === "web_search_tool_result" && Array.isArray(b.content)).forEach((b) => b.content.forEach((r) => keep(r.url, r.title)));
     return { text, truncated: j.stop_reason === "max_tokens", usage: j.usage, sources: [...sources.values()], searches: j.usage?.server_tool_use?.web_search_requests || 0 };
   } finally { clearTimeout(t); }
 }

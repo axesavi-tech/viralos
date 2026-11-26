@@ -362,7 +362,11 @@ Report only what your searches support; say "not found" rather than guess. Never
 Return ONLY JSON: {"summary":"under 90 words","competitors":[{"name":"","positioning":"under 18 words","price_band":"as published, or empty","channels":"","url":"https://..."}],"price_bands":[{"band":"entry|mid|premium|luxury","range":"as found","examples":""}],"trends":[{"trend":"","evidence":"under 20 words","url":"https://..."}],"audience_signals":["under 20 words each"],"whitespace":["gaps no competitor owns, under 20 words"]}
 At most 6 competitors, 4 price bands, 5 trends, 4 audience signals, 3 white spaces.`;
  const r=await aiJob(p,'research',{research:true,searches:8,maxTokens:6000});let data={};try{data=parseJ(r.text)}catch(e){data={summary:String(r.text||'').slice(0,600)}}
- g.research={at:Date.now(),data,sources:(r.sources||[]).slice(0,20),searches:r.searches||0};save(b);return g.research}
+ const own=[];const add=(u,t)=>{if(typeof u==='string'&&/^https:\/\//.test(u)&&!own.some(x=>x.url===u))own.push({url:u,title:t||u.replace(/^https:\/\/(www\.)?/,'').split('/')[0]})};
+ (data.competitors||[]).forEach(c=>add(c.url,c.name));(data.trends||[]).forEach(t=>add(t.url,t.trend));
+ /* the pages the analyst actually cited in its findings come first, then the rest of what the searches returned */
+ const src=[...own];(r.sources||[]).forEach(x=>{if(x&&x.url&&!src.some(y=>y.url===x.url))src.push(x)});
+ g.research={at:Date.now(),data,sources:src.slice(0,20),searches:r.searches||0};save(b);return g.research}
 async function writeInsights(b){const g=G(b);
  const p=`You are Kathavi's Chief Brand Architect. Read every decision and the live research, then write the insight layer of the brand's dashboard: sharp, specific, non-obvious, defensible. Scores are your reasoned judgement (say why); never invent market numbers.
 BRAND: ${b.name} · ${g.type||'physical'} · idea: ${g.idea||b.desc}
@@ -382,7 +386,7 @@ Return ONLY JSON:
 "why":{"headline":"under 30 words","readiness":"under 30 words","map":"under 30 words"}}
 3 opportunities, all 7 strength dimensions (0-100), map points 0-100 with the brand, 3-6 competitors from the research and 1-2 gaps, 4-6 risks (1-5 scales), 3-6 proof items, 6 plan rows covering 12 weeks.`;
  const v=await askJSON('journey',p,{tier:'default'});g.insights={...v,at:Date.now()};save(b);return g.insights}
-async function runWave(b,ds,o){await Promise.all(ds.map(d=>recommend(d,null,{...o,b,auto:true,quiet:true}).then(()=>{RUN[b.id].done++;paint()}).catch(e=>{RUN[b.id].errors=(RUN[b.id].errors||0)+1;RUN[b.id].last=errText(e);paint()})))}
+async function runWave(b,ds,o){await Promise.all(ds.map(d=>recommend(d,null,{...o,b,auto:true,quiet:true}).catch(e=>{/* one more try for an unreadable answer; never for timeouts or credit errors */if(e&&e.code==='bad_json')return recommend(d,null,{...o,b,auto:true,quiet:true});throw e}).then(()=>{RUN[b.id].done++;paint()}).catch(e=>{RUN[b.id].errors=(RUN[b.id].errors||0)+1;RUN[b.id].last=errText(e);paint()})))}
 const paint=()=>{if(['dashboard','home'].includes(V.cur.view))rerender()};
 async function autopilot(b,from=0,o={}){if(RUN[b.id]&&RUN[b.id].phase&&RUN[b.id].phase!=='done'&&RUN[b.id].phase!=='error')return;
  const stages=STAGES.slice(from);const R=RUN[b.id]={phase:'research',stage:null,done:0,total:stages.reduce((a,s)=>a+s.D.length,0),errors:0,at:Date.now()};paint();
