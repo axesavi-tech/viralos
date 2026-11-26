@@ -28,7 +28,7 @@ export default function Home() {
   return (<>
     <div className="wrap">
       <nav className="nav" aria-label="Main"><Link href="/" className="logo">Katha<i>vi</i></Link>
-        <div className="links"><a href="#studios">Studios</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><Link href="/login">Sign in</Link><Link href="/login?mode=signup" className="btn pri pill arrow">Start free</Link></div></nav>
+        <div className="links"><a href="#studios">Studios</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a><Link href="/login" className="signin">Sign in</Link><Link href="/login?mode=signup" className="btn pri pill arrow">Start free</Link></div></nav>
 
       <header className="hero">
         <div className="stack" aria-hidden="true"><span /><span /><span>Reel</span></div>

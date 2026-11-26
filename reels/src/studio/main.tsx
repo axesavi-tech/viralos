@@ -75,7 +75,7 @@ const App: React.FC = () => {
   const player = useRef<PlayerRef>(null);
   const [vh, setVh] = useState(() => window.innerHeight);
   useEffect(() => { const f = () => setVh(window.innerHeight); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f); }, []);
-  const ph = Math.max(480, Math.min(vh - (EMBED ? 90 : 150), Math.round((window.innerWidth < 1050 ? Math.min(420, window.innerWidth - 40) : 9999) * 16 / 9)));
+  const ph = Math.max(480, Math.min(vh - (EMBED ? 90 : 150), Math.round((window.innerWidth < 1050 ? Math.min(320, window.innerWidth - 40) : 9999) * 16 / 9)));
   const pw = Math.round(ph * 9 / 16);
 
   // Receive the customer's brand from the Kathavi studio around this page.
@@ -228,7 +228,17 @@ const App: React.FC = () => {
           {playable ? (
             <Player ref={player} component={Reel as any} inputProps={playable as any} durationInFrames={dur} fps={30} compositionWidth={1080} compositionHeight={1920}
               style={{width: pw, height: ph}} controls loop autoPlay acknowledgeRemotionLicense />
-          ) : <div className="error">{planned.err}</div>}
+          ) : (
+            <div className="empty">
+              <p>{planned.err}</p>
+              {d.media.length ? null : (
+                <div className="empty-actions">
+                  <label className="btn-light">Upload photos<input type="file" accept="image/*" multiple disabled={busy} onChange={(e) => onUpload(e.target.files)} /></label>
+                  <button className="btn-ghost" onClick={() => choose('iraaya')}>Try a demo brand</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div className="meta" aria-live="polite">{note || (spec ? `${(dur / 30).toFixed(1)}s · ${spec.scenes.length} scenes · 1080×1920 · 30fps` : '')}</div>
       </main>
