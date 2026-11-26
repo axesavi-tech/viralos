@@ -174,7 +174,8 @@ function sync(b){const g=G(b);b.dna=b.dna||{};
 function save(b){sync(b);Store.put(b);try{V.paintCredits()}catch(e){}}
 
 /* ---------------- the AI call ---------------- */
-function genomeText(b,limit=60){const lines=[];ALL_D.forEach(d=>d.F.forEach(f=>{const v=valOf(b,fk(d,f));if(v!=null)lines.push(`${d.title} / ${f.l}: ${show(f,v)}`)}));return lines.slice(0,limit).join('\n')||'(no decisions yet)'}
+/* each decision trimmed so late steps (with 60+ decisions) still answer within the time limit */
+function genomeText(b,limit=70,each=200){const lines=[];ALL_D.forEach(d=>d.F.forEach(f=>{const v=valOf(b,fk(d,f));if(v!=null){const t=show(f,v);lines.push(`${d.title} / ${f.l}: ${t.length>each?t.slice(0,each)+'…':t}`)}}));return lines.slice(0,limit).join('\n')||'(no decisions yet)'}
 function fieldSpec(f){return`- "${f.k}" (${f.t==='text'?'string':f.t==='list'?'array of strings':f.t==='palette'?'array of {"hex":"#RRGGBB","role":"primary|accent|light background|dark text|support"}':'array of theme ids'}): ${f.l}. ${f.g}`}
 function prompt(b,d,only){const g=G(b),S=SPEC[d.sp];const F=only?d.F.filter(f=>f.k===only):d.F;
  const rejected=F.map(f=>{const r=(g.f[fk(d,f)]||{}).rejected||[];return r.length?`${f.k}: ${r.map(x=>show(f,x)).join(' | ')}`:''}).filter(Boolean).join('\n');
@@ -191,7 +192,7 @@ Fields:
 ${F.map(fieldSpec).join('\n')}
 ${F.some(f=>f.t==='themes')?'Theme ids you may use: '+THEME_IDS.join(', '):''}
 Rules: be specific to this brand, never generic. Never invent facts, statistics, prices, awards, reviews, testimonials or competitor details presented as verified; frame market views as hypotheses. Names, handles and domains always need an availability and trademark check. Indian context unless the owner says otherwise. Plain, confident language, no clichés.
-For each field give your recommended value, a "why" (one sentence, under 20 words), and two genuinely different "alternatives" of the same type.
+For each field give your recommended value, a "why" (one sentence, under 20 words), and ${d.id==='review'?'an empty "alternatives" array (an audit has no alternatives)':'two genuinely different "alternatives" of the same type'}.
 Keep it tight so it reads well on a phone: every string under 30 words, lists at most 5 items, alternatives shorter than the main value.
 Return ONLY JSON: {"fields":{"<key>":{"value":...,"why":"","alternatives":[...]}},"note":"one line from you to the owner","question":"one question only the owner can answer, or empty"}`}
 function coerce(f,v){if(v==null)return null;
@@ -207,8 +208,8 @@ async function siteFor(b,d){const g=G(b);const src=[g.inputs[d.id]||'',g.idea||'
   const site={url,at:Date.now(),title:r.title||'',desc:r.description||'',colors:(r.colors||[]).slice(0,6),text};g.sites={...(g.sites||{}),[url]:site};Store.put(b);return site}
  catch(e){return{url,at:0,error:e&&e.message||'Could not read that website'}}}
 async function recommend(d,only){const b=brand();if(!b)return;const g=G(b);BUSY[d.id]=only||'all';rerender();
- try{const site=await siteFor(b,d);
-  const full=prompt(b,d,only)+(site&&site.text?`\nWEBSITE ${site.url}, READ LIVE JUST NOW (use its real facts, words, products and tone; never claim anything it does not say):\nTitle: ${site.title}\nDescription: ${site.desc}\nColours seen: ${(site.colors||[]).join(', ')}\n${site.text}`:site&&site.error?`\nThe owner mentioned ${site.url} but it could not be read (${site.error}). Say so in your note.`:'');
+ try{const site=d.stage&&d.stage.key==='learn'?null:await siteFor(b,d);const siteText=site&&site.text?site.text.slice(0,d.stage&&d.stage.key==='discover'?7000:3000):'';
+  const full=prompt(b,d,only)+(site&&site.text?`\nWEBSITE ${site.url}, READ LIVE JUST NOW (use its real facts, words, products and tone; never claim anything it does not say):\nTitle: ${site.title}\nDescription: ${site.desc}\nColours seen: ${(site.colors||[]).join(', ')}\n${siteText}`:site&&site.error?`\nThe owner mentioned ${site.url} but it could not be read (${site.error}). Say so in your note.`:'');
   /* a step that runs past the time limit is refunded; ask the faster model once instead of failing */
   let v;try{v=await askJSON('journey',full,{tier:'default'})}catch(e){if(e&&e.code==='timeout'){notify('That took too long, so a faster specialist model is finishing it.');v=await askJSON('journey',full,{tier:'quick'})}else throw e}
   const out=v.fields||{};
