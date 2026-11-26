@@ -3,14 +3,27 @@ import "server-only";
 export type Msg = { role: "user" | "assistant"; content: any };
 export type Img = { media_type: string; data: string };
 
-async function call(body: any) {
+/** Hosting cuts a request off at about 30 s, after the credits were taken; stop first so the caller can refund. */
+const TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS) || 26000;
+
+async function call(body: any, timeoutMs = TIMEOUT_MS) {
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) throw new Error("Claude is not configured (ANTHROPIC_API_KEY missing).");
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  let r: Response;
+  try {
+    r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+      body: JSON.stringify(body),
+      signal: ctl.signal,
+    });
+  } catch (err: any) {
+    const e: any = new Error(err?.name === "AbortError" ? "The AI took too long to answer. You were not charged; try again." : "Could not reach the AI service. You were not charged; try again.");
+    e.code = err?.name === "AbortError" ? "timeout" : "provider_error";
+    throw e;
+  } finally { clearTimeout(timer); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
     const msg = j?.error?.message || `Claude returned ${r.status}`;
@@ -31,8 +44,8 @@ export function toMessages(input: string | Msg[], images: Img[] = []): Msg[] {
   return msgs;
 }
 
-export async function complete(model: string, messages: Msg[], opts: { maxTokens?: number; system?: string } = {}) {
-  const j = await call({ model, max_tokens: opts.maxTokens || 8000, system: opts.system, messages });
+export async function complete(model: string, messages: Msg[], opts: { maxTokens?: number; system?: string; timeoutMs?: number } = {}) {
+  const j = await call({ model, max_tokens: opts.maxTokens || 8000, system: opts.system, messages }, opts.timeoutMs);
   const text = (j.content || []).filter((b: any) => b.type === "text").map((b: any) => b.text).join("");
   return { text, usage: j.usage, truncated: j.stop_reason === "max_tokens" };
 }

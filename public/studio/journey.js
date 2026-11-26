@@ -191,24 +191,34 @@ Fields:
 ${F.map(fieldSpec).join('\n')}
 ${F.some(f=>f.t==='themes')?'Theme ids you may use: '+THEME_IDS.join(', '):''}
 Rules: be specific to this brand, never generic. Never invent facts, statistics, prices, awards, reviews, testimonials or competitor details presented as verified; frame market views as hypotheses. Names, handles and domains always need an availability and trademark check. Indian context unless the owner says otherwise. Plain, confident language, no clichés.
-For each field give your recommended value, a one-sentence "why", and two genuinely different "alternatives" of the same type.
+For each field give your recommended value, a "why" (one sentence, under 20 words), and two genuinely different "alternatives" of the same type.
+Keep it tight so it reads well on a phone: every string under 30 words, lists at most 5 items, alternatives shorter than the main value.
 Return ONLY JSON: {"fields":{"<key>":{"value":...,"why":"","alternatives":[...]}},"note":"one line from you to the owner","question":"one question only the owner can answer, or empty"}`}
 function coerce(f,v){if(v==null)return null;
  if(f.t==='text')return typeof v==='string'?v.trim():Array.isArray(v)?v.join('; '):String(v);
  if(f.t==='list')return list(Array.isArray(v)?v.map(x=>typeof x==='string'?x:JSON.stringify(x)):String(v).split(/\n|;\s/)).slice(0,10);
  if(f.t==='palette'){const a=(Array.isArray(v)?v:[]).map(c=>typeof c==='string'?{hex:c,role:''}:c).filter(c=>/^#[0-9a-f]{6}$/i.test(c?.hex||''));return a.length?a.slice(0,6).map(c=>({hex:c.hex.toUpperCase(),role:String(c.role||'').slice(0,30)})):null}
  if(f.t==='themes'){const a=(Array.isArray(v)?v:[v]).map(String).filter(x=>THEME_IDS.includes(x));return a.length?a.slice(0,3):null}return null}
+/* Websites the owner mentions are read live (once a week per site) so specialists work from the real site, not guesses. */
+const DOMAIN_RX=/(?:https?:\/\/)?(?<![@\w.])((?:[a-z0-9-]+\.)+(?:com|in|co|net|org|store|shop|io|app|co\.in|studio|design|fashion|art|me|xyz))(\/[^\s,;]*)?/i;
+async function siteFor(b,d){const g=G(b);const src=[g.inputs[d.id]||'',g.idea||'',b.website||''].join(' ');const m=src.match(DOMAIN_RX);if(!m||!window.VX||!VX.api)return null;
+ const url=m[1].toLowerCase()+(m[2]||'');const c=(g.sites||{})[url];if(c&&Date.now()-c.at<7*864e5)return c;
+ try{const r=await VX.api('/api/web/read',{json:{url}});const text=(r.pages||[]).map(p=>`# ${p.title||p.url}\n${String(p.text||'').slice(0,2500)}`).join('\n\n').slice(0,7000);
+  const site={url,at:Date.now(),title:r.title||'',desc:r.description||'',colors:(r.colors||[]).slice(0,6),text};g.sites={...(g.sites||{}),[url]:site};Store.put(b);return site}
+ catch(e){return{url,at:0,error:e&&e.message||'Could not read that website'}}}
 async function recommend(d,only){const b=brand();if(!b)return;const g=G(b);BUSY[d.id]=only||'all';rerender();
- try{const v=await askJSON('journey',prompt(b,d,only),{tier:'complex'});const out=v.fields||{};
+ try{const site=await siteFor(b,d);
+  const v=await askJSON('journey',prompt(b,d,only)+(site&&site.text?`\nWEBSITE ${site.url}, READ LIVE JUST NOW (use its real facts, words, products and tone; never claim anything it does not say):\nTitle: ${site.title}\nDescription: ${site.desc}\nColours seen: ${(site.colors||[]).join(', ')}\n${site.text}`:site&&site.error?`\nThe owner mentioned ${site.url} but it could not be read (${site.error}). Say so in your note.`:''),{tier:'default'});const out=v.fields||{};
   (only?d.F.filter(f=>f.k===only):d.F).forEach(f=>{const r=out[f.k];if(!r)return;const key=fk(d,f),cur=g.f[key]||{};if(decided(cur)&&!only)return;
    const val=coerce(f,r.value);if(val==null||(Array.isArray(val)&&!val.length))return;
    g.f[key]={...cur,value:val,status:'proposed',by:'ai',sp:d.sp,why:String(r.why||'').slice(0,300),alts:(Array.isArray(r.alternatives)?r.alternatives:[]).map(a=>coerce(f,a)).filter(a=>a!=null&&(!Array.isArray(a)||a.length)).slice(0,3),at:Date.now()}});
-  g.notes[d.id]={note:String(v.note||'').slice(0,300),question:String(v.question||'').slice(0,200),at:Date.now()};
+  g.notes[d.id]={note:String(v.note||'').slice(0,300),question:String(v.question||'').slice(0,200),site:site&&site.text?site.url:'',at:Date.now()};
   g.log.unshift({at:Date.now(),d:d.id,what:'recommended',sp:d.sp});g.log=g.log.slice(0,40);save(b)}
  catch(e){notify(errText(e))}finally{delete BUSY[d.id];rerender()}}
 
 /* ---------------- views ---------------- */
 const av=(k,sz='')=>{const S=SPEC[k];return`<span class="jx-av ${sz}" style="--c:${S.c}" title="${h(S.n)}" aria-hidden="true">${S.i}</span>`};
+const brandPick=()=>{const bs=Store.all('brand');const b=brand();return bs.length>1?`<label class="jx-bp"><span>Brand</span><select data-act="pickbrand" aria-label="Brand">${bs.map(x=>`<option value="${x.id}" ${b&&x.id===b.id?'selected':''}>${h(x.name||'Untitled')}</option>`).join('')}</select></label>`:''};
 const spChip=k=>`<span class="jx-sp">${av(k,'sm')}<span>${h(SPEC[k].n)}</span></span>`;
 const ring=(pct,lbl)=>`<span class="jx-ring" style="--p:${pct}" role="img" aria-label="${lbl||pct+'% decided'}"><b>${pct}%</b></span>`;
 
@@ -227,7 +237,7 @@ function startView(){return head('Start your brand','Describe your idea in a lin
 function nextStep(b){for(const s of STAGES)for(const d of s.D){const p=dProg(b,d);if(p.n<p.of)return{s,d,p}}return null}
 
 VIEWS.home=()=>{const b=brand();if(!b||(!b.genome&&!b.dna)||V.cur.jstart)return startView()+(b&&V.cur.jstart?`<p><button class="vx-btn sm" data-act="jback" type="button">← Back to ${h(b.name)}</button></p>`:'');const g=G(b),P=allProg(b),nx=nextStep(b);
- return head(h(b.name||'Your brand'),h(g.idea||b.desc||''),`<button class="vx-btn sm" data-act="jnew" type="button">Start another brand</button><button class="vx-btn sm" data-go="genome" type="button">Brand Genome</button>`)+`
+ return head(h(b.name||'Your brand'),h(g.idea||b.desc||''),`${brandPick()}<button class="vx-btn sm" data-act="jnew" type="button">Start another brand</button><button class="vx-btn sm" data-go="genome" type="button">Brand Genome</button>`)+`
  <div class="jx-path" role="list">${STAGES.map(s=>{const p=sProg(b,s);return`<button class="jx-stage ${p.pct===100?'done':p.n?'on':''}" role="listitem" data-go="${s.key}" type="button"><span class="jx-n">${p.pct===100?'✓':s.n}</span><b>${s.name}</b><small>${p.n}/${p.of}</small><i style="width:${p.pct}%"></i></button>`}).join('')}</div>
  <div class="jx-grid">
   <div class="vx-card jx-next">${av('architect')}<div><small>Chief Brand Architect · next best step</small>
@@ -261,13 +271,13 @@ function editor(f,key,v){const txt=f.t==='palette'?(v||[]).map(c=>`${c.hex} ${c.
 
 function stageView(s){return()=>{const b=brand();if(!b)return startView();const g=G(b),p=sProg(b,s),i=STAGES.indexOf(s),nxt=STAGES[i+1],prv=STAGES[i-1];
  const anyBusy=s.D.some(d=>BUSY[d.id]);
- return head(`<span class="jx-kicker">Stage ${s.n} of 7</span>${s.name}`,h(s.q),`${ring(p.pct)}<button class="vx-btn pri" data-act="jstage" data-s="${s.key}" type="button" ${anyBusy?'disabled':''} title="About ${COST()} credits per step">${anyBusy?'Specialists working…':'Recommend everything here'}</button>`)+`
+ return head(`<span class="jx-kicker">Stage ${s.n} of 7 · ${h(b.name)}</span>${s.name}`,h(s.q),`${brandPick()}${ring(p.pct)}<button class="vx-btn pri" data-act="jstage" data-s="${s.key}" type="button" ${anyBusy?'disabled':''} title="About ${COST()} credits per step">${anyBusy?'Specialists working…':'Recommend everything here'}</button>`)+`
  <div class="jx-crew">${s.sp.map(spChip).join('')}<span class="vx-small vx-muted">Outcome: ${h(s.out)} · each recommendation step uses about ${COST()} credits</span></div>
  ${s.D.map(d=>{const dp=dProg(b,d),n=g.notes[d.id],busy=BUSY[d.id]==='all',pend=d.F.filter(f=>(g.f[fk(d,f)]||{}).status==='proposed').length;
   return`<section class="vx-card jx-d" id="d-${d.id}"><div class="jx-dh"><div><h2>${h(d.title)}</h2><p class="vx-small vx-muted">${h(d.desc)}</p></div><div class="jx-dmeta">${spChip(d.sp)}<span class="vx-small">${dp.n}/${dp.of} decided</span></div></div>
-   <div class="jx-dir"><label class="jx-sm" for="in-${d.id}">Your direction <span class="vx-muted">(optional)</span></label><div class="vx-row"><input id="in-${d.id}" data-jin="${d.id}" value="${h(g.inputs[d.id]||'')}" placeholder="Anything the specialist should know or follow" maxlength="300">
+   <div class="jx-dir"><label class="jx-sm" for="in-${d.id}">Your direction <span class="vx-muted">(optional)</span></label><div class="vx-row"><input id="in-${d.id}" data-jin="${d.id}" value="${h(g.inputs[d.id]||'')}" placeholder="Anything the specialist should know or follow. Mention a website and it will be read." maxlength="300">
     <button class="vx-btn ${dp.n||Object.keys(g.f).some(k=>k.startsWith(d.id+'.'))?'':'pri'}" data-act="jrec" data-d="${d.id}" type="button" ${busy?'disabled':''}>${busy?'Working…':Object.keys(g.f).some(k=>k.startsWith(d.id+'.'))?'Recommend again':'Recommend'}</button></div></div>
-   ${n&&(n.note||n.question)?`<div class="jx-note">${av(d.sp,'sm')}<div>${n.note?`<p>${h(n.note)}</p>`:''}${n.question?`<p class="jx-q"><b>Question for you:</b> ${h(n.question)} <span class="vx-muted">Answer in “Your direction” and recommend again.</span></p>`:''}</div></div>`:''}
+   ${n&&(n.note||n.question)?`<div class="jx-note">${av(d.sp,'sm')}<div>${n.site?`<p class="jx-read">Read ${h(n.site)} live for this step</p>`:''}${n.note?`<p>${h(n.note)}</p>`:''}${n.question?`<p class="jx-q"><b>Question for you:</b> ${h(n.question)} <span class="vx-muted">Answer in “Your direction” and recommend again.</span></p>`:''}</div></div>`:''}
    ${busy?`<div class="jx-busy" role="status"><span class="jx-dots"><i></i><i></i><i></i></span>${h(SPEC[d.sp].n)} is working on it…</div>`:''}
    <div class="jx-fields">${d.F.map(f=>fieldRow(b,d,f)).join('')}</div>
    ${pend>1?`<div class="jx-bulk"><button class="vx-btn sm" data-act="jall" data-d="${d.id}" type="button">Accept all ${pend} suggestions</button></div>`:''}
@@ -278,7 +288,7 @@ STAGES.forEach(s=>{VIEWS[s.key]=stageView(s)});
 
 VIEWS.genome=()=>{const b=brand();if(!b)return startView();const g=G(b),P=allProg(b);
  const by={};ALL_D.forEach(d=>d.F.forEach(f=>{const v=valOf(b,fk(d,f));if(v==null)return;(by[f.dna]=by[f.dna]||[]).push({d,f,v})}));
- return head('Brand Genome','The single source of truth every specialist and studio builds on. Only decisions you accepted or wrote appear here.',`${ring(P.pct)}<button class="vx-btn sm" data-act="jexport" type="button">Copy as text</button>`)+`
+ return head(`<span class="jx-kicker">${h(b.name)}</span>Brand Genome`,'The single source of truth every specialist and studio builds on. Only decisions you accepted or wrote appear here.',`${brandPick()}${ring(P.pct)}<button class="vx-btn sm" data-act="jexport" type="button">Copy as text</button>`)+`
  <div class="jx-genome">${DNA_SECTIONS.map(([k,l,sub])=>{const rows=by[k]||[];return`<section class="vx-card jx-dna"><h2>${l}<small>${sub}</small></h2>
   ${rows.length?rows.map(({d,f,v})=>`<div class="jx-gr"><span class="jx-gl">${h(f.l)}<button class="jx-link" data-go="${d.stage.key}" type="button">${d.stage.name}</button></span>${valueHTML(f,v)}</div>`).join('')
    :`<p class="vx-small vx-muted">Nothing decided yet. ${(()=>{const d=ALL_D.find(d=>d.F.some(f=>f.dna===k));return d?`<button class="jx-link" data-go="${d.stage.key}" type="button">Start in ${d.stage.name}</button>`:''})()}</p>`}</section>`}).join('')}</div>`};

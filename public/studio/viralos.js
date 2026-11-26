@@ -55,10 +55,10 @@ let AIP=null;function aiNs(){if(!AIP)AIP=(window.claude&&claude.use)?withTimeout
 function parseLoose(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw{code:'bad_json',message:'Claude returned no JSON'};return JSON.parse(t.slice(a,b+1))}
 async function askJSON(action,input,opts={}){const s=await aiNs();if(!s)throw{code:'no_ai'};
   const o={modelTier:opts.tier||'default',cache:false,action};let v;
-  try{v=await s.json(input,o)}catch(e){if(e&&['not_granted','rate_limited','no_ai'].includes(e.code))throw e;const r=await s(input,o);v=parseLoose(r.text||'')}
+  try{v=await s.json(input,o)}catch(e){/* only retry an unreadable answer; a server or timeout error would charge again for nothing */if(e&&(['not_granted','rate_limited','no_ai','timeout','provider_error','insufficient_credits','unauthenticated'].includes(e.code)||e.status>=500))throw e;const r=await s(input,o);v=parseLoose(r.text||'')}
   if(!v||typeof v!=='object')throw{code:'bad_json'};
   charge(action,(typeof input==='string'?input.length:JSON.stringify(input).length)+JSON.stringify(v).length);return v}
-function errText(e){const c=e&&e.code;return c==='no_ai'?'Claude is only available when this page is open on claude.ai.':c==='not_granted'?'Claude access was declined for this page.':c==='rate_limited'?'Claude is busy. Wait a minute, then try again.':c==='bad_json'?'Claude returned something unreadable. Try again.':'Something went wrong talking to Claude. Try again.'}
+function errText(e){const c=e&&e.code;return c==='no_ai'?'Claude is only available when this page is open on claude.ai.':c==='not_granted'?'Claude access was declined for this page.':c==='rate_limited'?'Claude is busy. Wait a minute, then try again.':c==='bad_json'?'Claude returned something unreadable. Try again.':c==='timeout'?'The AI took too long to answer. You were not charged. Try again.':c==='insufficient_credits'?'Not enough credits. Top up in Settings → Billing.':(e&&e.message&&e.code==='provider_error')?'The AI service is unavailable: '+e.message:'Something went wrong talking to Claude. Try again.'}
 function notify(s){if(typeof toast==='function')toast(s);else console.log(s)}
 
 /* ============ Current brand / campaign ============ */
