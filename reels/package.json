@@ -11,7 +11,9 @@
     "test": "tsc -p . && tsx scripts/durations.ts && tsx scripts/contrast.ts",
     "qa": "node scripts/qa.mjs",
     "posts:qa": "tsx scripts/posts-qa.mts",
-    "thumbs": "node scripts/thumbs.mjs"
+    "thumbs": "node scripts/thumbs.mjs",
+    "media:qa": "tsx scripts/multimedia-qa.mts",
+    "media:render-qa": "tsx scripts/media-render-qa.mts"
   },
   "dependencies": {
     "@fontsource/anton": "^5.3.0",

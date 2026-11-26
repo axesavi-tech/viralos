@@ -34,7 +34,7 @@ const med = (c: Ctx, j = 0) => {
   return c.spec.media[idx % c.spec.media.length];
 };
 const Photo: React.FC<{c: Ctx; j?: number; style: React.CSSProperties; radius?: number}> = ({c, j = 0, style, radius}) => (
-  <MediaBox media={med(c, j)} anim="still" dur={1} style={style} radius={radius} grade={c.t.decor.grade} fallback={c.p.surface} />
+  <MediaBox media={med(c, j)} anim="still" still dur={1} style={style} radius={radius} grade={c.t.decor.grade} fallback={c.p.surface} />
 );
 
 /** eyebrow + title + body stacked in a box, sized from the theme's scale */

@@ -7,6 +7,8 @@ import {THEMES, themeById} from '../themes';
 import {BRIEFS} from '../samples';
 import type {Brief, ReelSpec} from '../engine/schema';
 import {PostsPanel} from './PostsPanel';
+import {MediaPanel, FrameEditor, probeVideo, MAX_MEDIA, type LibItem} from './MediaPanel';
+import {isVideo, type Media} from '../engine/schema';
 import {FORMAT_SIZE, type PostFormat, type PostSpec} from '../posts/schema';
 
 /**
@@ -32,7 +34,7 @@ const DEMOS: {key: string; label: string; theme: string}[] = [
 
 type Draft = Brief;
 type ParentBrand = {name?: string; tagline?: string; primary?: string; accent?: string; handle?: string};
-type ParentMsg = {type: 'kathavi:brand'; ws?: string | null; brand?: ParentBrand | null; media?: {src: string}[]; product?: {name?: string; price?: string} | null};
+type ParentMsg = {type: 'kathavi:brand'; ws?: string | null; brand?: ParentBrand | null; media?: {src: string; kind?: 'image' | 'video'; poster?: string}[]; product?: {name?: string; price?: string} | null};
 
 const hex = (v: unknown, fallback: string) => {
   const s = String(v ?? '').trim();
@@ -59,18 +61,30 @@ const fromBrand = (m: ParentMsg, durationSec: Draft['durationSec'] = 30): Draft 
     features: [],
     price: m.product?.price ? String(m.product.price).slice(0, 24) : undefined,
     cta: 'Shop now',
-    media: (m.media ?? []).filter((x) => x?.src).slice(0, 12).map((x) => ({src: x.src, focusX: 0.5, focusY: 0.45})),
+    media: (m.media ?? []).filter((x) => x?.src).slice(0, MAX_MEDIA).map((x) => ({src: x.src, kind: x.kind, poster: x.poster, focusX: 0.5, focusY: 0.45})),
     intensity: 1,
     showSafeZones: false,
   } as Draft;
 };
 
-const KIND_LABEL: Record<string, string> = {hook: 'Hook', story: 'Story', product: 'Product', feature: 'Feature', detail: 'Detail', offer: 'Offer', cta: 'Call to action', logo: 'Logo'};
+const KIND_LABEL: Record<string, string> = {hook: 'Hook', story: 'Story', product: 'Product', feature: 'Feature', detail: 'Detail', gallery: 'Gallery', offer: 'Offer', cta: 'Call to action', logo: 'Logo'};
 
 const App: React.FC = () => {
   const [parent, setParent] = useState<ParentMsg | null>(null);
   const [preset, setPreset] = useState('iraaya');
   const [d, setD] = useState<Draft>(() => fromDemo('iraaya'));
+  // Library: every photo/clip the customer added (up to 8), each ticked in or out of this reel. d.media = the ticked ones.
+  const [lib, setLibState] = useState<LibItem[]>(() => fromDemo('iraaya').media.map((m) => ({m, on: true})));
+  const [editing, setEditing] = useState<number | null>(null);
+  const [picker, setPicker] = useState<string | null>(null);
+  const setLib = (l: LibItem[]) => { setLibState(l); setOrder(null); setD((x) => ({...x, media: l.filter((i) => i.on).map((i) => i.m), assign: undefined})); };
+  const loadDraft = (x: Draft) => { setLibState(x.media.slice(0, MAX_MEDIA).map((m) => ({m, on: true}))); setEditing(null); setPicker(null); return {...x, media: x.media.slice(0, MAX_MEDIA)}; };
+  /** framing edits keep the scene choices: only the item's look changes */
+  const patchItem = (i: number, p: Partial<Media>) => setLibState((l) => {
+    const n = l.map((x, j) => (j === i ? {...x, m: {...x.m, ...p}} : x));
+    setD((x) => ({...x, media: n.filter((k) => k.on).map((k) => k.m)}));
+    return n;
+  });
   const [order, setOrder] = useState<string[] | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -89,7 +103,7 @@ const App: React.FC = () => {
       if (e.origin !== location.origin || e.data?.type !== 'kathavi:brand') return;
       const m = e.data as ParentMsg;
       setParent(m);
-      if (m.brand?.name) { setPreset('mine'); setOrder(null); setD((x) => fromBrand(m, x.durationSec)); }
+      if (m.brand?.name) { setPreset('mine'); setOrder(null); setD((x) => loadDraft(fromBrand(m, x.durationSec))); }
     };
     window.addEventListener('message', onMsg);
     window.parent.postMessage({type: 'kathavi:ready'}, location.origin);
@@ -98,10 +112,10 @@ const App: React.FC = () => {
 
   const set = (patch: Partial<Draft>) => setD((x) => ({...x, ...patch}));
   const setBrand = (patch: Partial<Draft['brand']>) => setD((x) => ({...x, brand: {...x.brand, ...patch}}));
-  const choose = (k: string) => { setPreset(k); setOrder(null); setNote(''); setD((x) => (k === 'mine' && parent ? fromBrand(parent, x.durationSec) : fromDemo(k, x.durationSec))); };
+  const choose = (k: string) => { setPreset(k); setOrder(null); setNote(''); setD((x) => loadDraft(k === 'mine' && parent ? fromBrand(parent, x.durationSec) : fromDemo(k, x.durationSec))); };
 
   const planned = useMemo((): {spec: ReelSpec | null; err: string} => {
-    if (!d.media.length) return {spec: null, err: 'Add at least one photo to make a reel. Upload here, or add photos to your Brand Vault.'};
+    if (!d.media.length) return {spec: null, err: 'Add at least one photo or clip to make a reel. Upload here, or add photos to your Brand Vault.'};
     if (!d.hook.trim()) return {spec: null, err: 'Write a hook: the first line people read.'};
     try {
       const s = plan({...d, features: d.features.filter(Boolean), price: d.price || undefined, offer: d.offer || undefined, story: d.story || undefined, productName: d.productName || undefined});
@@ -113,7 +127,7 @@ const App: React.FC = () => {
   }, [d, order]);
   const spec = planned.spec;
 
-  const playable = useMemo(() => spec && {...spec, media: spec.media.map((m) => ({...m, src: abs(m.src)})), fontBase: `${base}/fonts`}, [spec]);
+  const playable = useMemo(() => spec && {...spec, media: spec.media.map((m) => ({...m, src: abs(m.src), poster: m.poster ? abs(m.poster) : undefined})), fontBase: `${base}/fonts`}, [spec]);
   const tl = spec ? timeline(spec) : [];
   const dur = spec ? totalFrames(spec) : 30;
 
@@ -137,33 +151,58 @@ const App: React.FC = () => {
 
   const onUpload = async (files: FileList | null) => {
     if (!files?.length) return;
-    const list = [...files].slice(0, 12);
-    if (!EMBED) { set({media: list.map((f) => ({src: URL.createObjectURL(f), focusX: 0.5, focusY: 0.5}))}); setOrder(null); return; }
-    setBusy(true); setNote('Uploading photos to your Brand Vault…');
-    const media: Draft['media'] = [];
+    const room = MAX_MEDIA - lib.length;
+    const all = [...files].filter((f) => /^(image|video)\//.test(f.type));
+    const list = all.slice(0, Math.max(0, room));
+    if (!list.length) { setNote(room <= 0 ? `A reel can use up to ${MAX_MEDIA} photos or clips. Remove one to add another.` : 'Choose JPG, PNG or WEBP photos, or MP4, MOV or WEBM clips.'); return; }
+    setBusy(true); setNote(EMBED ? 'Uploading to your Brand Vault…' : 'Adding…');
+    const up = async (f: Blob, name: string) => {
+      const fd = new FormData(); fd.append('file', f, name); fd.append('folder', 'reels');
+      return (await api('/api/assets', {method: 'POST', body: fd})).url as string;
+    };
+    const added: Media[] = []; let local = 0;
     for (const f of list) {
-      try {
-        const fd = new FormData(); fd.append('file', f, f.name); fd.append('folder', 'reels');
-        const r = await api('/api/assets', {method: 'POST', body: fd});
-        media.push({src: r.url, focusX: 0.5, focusY: 0.5});
-      } catch {
-        media.push({src: URL.createObjectURL(f), focusX: 0.5, focusY: 0.5});
+      const video = f.type.startsWith('video/');
+      const meta = video ? await probeVideo(f) : {};
+      let src = '', poster: string | undefined;
+      if (EMBED) {
+        try { src = await up(f, f.name); } catch { src = URL.createObjectURL(f); local++; }
+        if (meta.poster) { try { poster = await up(meta.poster, f.name.replace(/\.[^.]+$/, '') + '-poster.jpg'); } catch { poster = URL.createObjectURL(meta.poster); } }
+      } else {
+        src = URL.createObjectURL(f); poster = meta.poster ? URL.createObjectURL(meta.poster) : undefined;
       }
+      added.push({src, kind: video ? 'video' : 'image', durationSec: meta.durationSec, poster, focusX: 0.5, focusY: 0.5});
     }
-    set({media}); setOrder(null); setBusy(false);
-    setNote(media.some((m) => m.src.startsWith('blob:')) ? 'Some photos could not be stored (20 MB maximum each). They work in this preview but will not be saved with the reel.' : 'Photos added.');
+    setLib([...lib, ...added.map((m) => ({m, on: true}))]);
+    setBusy(false);
+    const skipped = all.length - list.length;
+    setNote([local ? 'Some files could not be stored (50 MB maximum each). They work in this preview but will not be saved with the reel.' : `${added.length} added.`,
+      skipped ? `${skipped} not added: a reel can use up to ${MAX_MEDIA}.` : ''].filter(Boolean).join(' '));
+  };
+
+  /** Customer picks which photo(s) a scene shows. Montages toggle items; other scenes swap their lead. */
+  const pickFor = (sceneId: string, current: number[], layout: string | undefined, idx: number) => {
+    let next: number[];
+    if (layout === 'montage') {
+      next = current.includes(idx) ? current.filter((x) => x !== idx) : [...current, idx].slice(0, 8);
+      if (!next.length) return;
+    } else {
+      next = [idx, ...current.slice(1).filter((x) => x !== idx)];
+      while (next.length < current.length) next.push((next[next.length - 1] + 1) % d.media.length);
+    }
+    setD((x) => ({...x, assign: {...(x.assign ?? {}), [sceneId]: next}}));
   };
 
   const save = async () => {
     if (!spec) return;
-    if (d.media.some((m) => m.src.startsWith('blob:'))) { setNote('Upload the photos to your Brand Vault before saving, so the reel can be opened again later.'); return; }
+    if (d.media.some((m) => m.src.startsWith('blob:'))) { setNote('Upload the photos and clips to your Brand Vault before saving, so the reel can be opened again later.'); return; }
     setBusy(true); setNote('Saving…');
     try {
       const id = 'reel_' + Date.now().toString(36);
       const theme = themeById(d.themeId);
       await api('/api/docs', {method: 'PUT', headers: {'content-type': 'application/json'}, body: JSON.stringify({id, data: {
         type: 'reel', title: `${d.brand.name} · ${theme.name} · ${d.durationSec}s`, brandName: d.brand.name, themeId: d.themeId, durationSec: d.durationSec,
-        demo: preset !== 'mine', brief: d, spec, savedAt: new Date().toISOString(),
+        demo: preset !== 'mine', brief: d, library: lib.map((x) => ({...x.m, inReel: x.on})), spec, savedAt: new Date().toISOString(),
       }})});
       setNote('Saved to your workspace. MP4 export arrives with the render service.');
     } catch (e: any) {
@@ -234,10 +273,9 @@ const App: React.FC = () => {
           </div>
         </section>
         <section>
-          <h3>Photos</h3>
-          {d.media.length ? <div className="thumbs">{d.media.map((m, i) => <img key={i} src={abs(m.src)} alt="" />)}</div> : <p className="hint">No photos yet.</p>}
-          <label className="file">{EMBED ? 'Upload photos to your Brand Vault' : 'Use your own photos'}<input type="file" accept="image/*" multiple disabled={busy} onChange={(e) => onUpload(e.target.files)} /></label>
-          {EMBED ? null : <p className="hint">Photos stay in your browser; nothing is uploaded.</p>}
+          <h3>Photos &amp; clips</h3>
+          <MediaPanel lib={lib} setLib={setLib} abs={abs} busy={busy} embed={EMBED} onUpload={onUpload} editing={editing} setEditing={setEditing} />
+          {editing !== null && lib[editing] ? <FrameEditor item={lib[editing].m} abs={abs} onChange={(p) => patchItem(editing, p)} onClose={() => setEditing(null)} /> : null}
         </section>
       </aside>
 
@@ -258,7 +296,7 @@ const App: React.FC = () => {
               <p>{planned.err}</p>
               {d.media.length ? null : (
                 <div className="empty-actions">
-                  <label className="btn-light">Upload photos<input type="file" accept="image/*" multiple disabled={busy} onChange={(e) => onUpload(e.target.files)} /></label>
+                  <label className="btn-light">Upload photos or clips<input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" multiple disabled={busy} onChange={(e) => onUpload(e.target.files)} /></label>
                   <button className="btn-ghost" onClick={() => choose('iraaya')}>Try a demo brand</button>
                 </div>
               )}
@@ -302,10 +340,28 @@ const App: React.FC = () => {
           <ol className="scenes">
             {spec?.scenes.map((s, i) => (
               <li key={s.id}>
-                <button className="seek" onClick={() => player.current?.seekTo(tl[i].from + 2)}>
-                  <b>{KIND_LABEL[s.kind]}</b><span>{s.layout} · {(s.frames / 30).toFixed(1)}s</span>
-                </button>
-                <span className="mv"><button aria-label="Move up" onClick={() => move(i, -1)} disabled={i === 0}>↑</button><button aria-label="Move down" onClick={() => move(i, 1)} disabled={i === spec.scenes.length - 1}>↓</button></span>
+                <div className="scene-row">
+                  <button className="seek" onClick={() => player.current?.seekTo(tl[i].from + 2)}>
+                    <b>{KIND_LABEL[s.kind] ?? s.kind}</b><span>{s.layout === 'montage' ? `${s.media.length} items` : s.layout} · {(s.frames / 30).toFixed(1)}s</span>
+                  </button>
+                  {s.media.length ? (
+                    <button className={'scene-media' + (picker === s.id ? ' on' : '')} onClick={() => setPicker(picker === s.id ? null : s.id)} aria-label={`Choose photos for ${KIND_LABEL[s.kind] ?? s.kind}`} title="Choose which photo or clip this scene shows">
+                      {(() => { const mm = d.media[s.media[0]]; const src = mm ? (isVideo(mm) ? mm.poster : mm.src) : ''; return src ? <img src={abs(src)} alt="" /> : <span>▶</span>; })()}
+                    </button>
+                  ) : null}
+                  <span className="mv"><button aria-label="Move up" onClick={() => move(i, -1)} disabled={i === 0}>↑</button><button aria-label="Move down" onClick={() => move(i, 1)} disabled={i === spec.scenes.length - 1}>↓</button></span>
+                </div>
+                {picker === s.id ? (
+                  <div className="scene-pick">
+                    <p className="hint">{s.layout === 'montage' ? 'Tap to add or remove items from this montage.' : s.media.length > 1 ? 'Tap the photo or clip that should lead this scene.' : 'Tap the photo or clip for this scene.'}</p>
+                    <div>{d.media.map((mm, k) => {
+                      const src = isVideo(mm) ? mm.poster : mm.src;
+                      return <button key={k} className={s.media.includes(k) ? 'on' : ''} onClick={() => pickFor(s.id, s.media, s.layout, k)} aria-pressed={s.media.includes(k)} aria-label={`Item ${k + 1}`}>
+                        {src ? <img src={abs(src)} alt="" /> : <span>▶</span>}{s.layout === 'montage' && s.media.includes(k) ? <i>{s.media.indexOf(k) + 1}</i> : null}
+                      </button>;
+                    })}</div>
+                  </div>
+                ) : null}
               </li>
             ))}
           </ol>

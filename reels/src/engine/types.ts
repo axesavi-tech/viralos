@@ -18,7 +18,7 @@ export type MediaAnim = 'kenBurns' | 'zoomOut' | 'panUp' | 'panLeft' | 'parallax
 export type LayoutId =
   | 'fullBleed' | 'framed' | 'split' | 'magazine' | 'collage' | 'arch' | 'typeOnly' | 'floating'
   | 'filmFrame' | 'lowerThird' | 'swissGrid' | 'sticker' | 'cta' | 'logo' | 'noir'
-  | 'depthStack' | 'cube' | 'floor';
+  | 'depthStack' | 'cube' | 'floor' | 'montage';
 export type Texture = 'none' | 'paper' | 'fabric' | 'grid' | 'film' | 'gradient' | 'motif' | 'halftone';
 export type LogoAnim = 'fade' | 'stamp' | 'outline' | 'letters' | 'mask';
 export type CtaStyle = 'minimal' | 'pill' | 'product' | 'sticker' | 'block';

@@ -33,32 +33,51 @@ export const plan = (input: Brief): ReelSpec => {
   beats.push({kind: 'cta', title: brief.cta, body: brief.brand.handle, eyebrow: brief.brand.tagline});
   if (brief.durationSec >= 30) beats.push({kind: 'logo'});
 
-  // 2. Allocate screen time by the theme's pacing weights (accounting for transition overlaps).
+  // 2. Which photos/clips each beat would show. Collages take two, 3D layouts three; a different item leads each time.
+  const N = brief.media.length;
+  const layoutFor = (kind: SceneKind, i: number) => { const ls = (theme.layouts[kind] ?? theme.layouts.default) as LayoutId[]; return ls[i % ls.length]; };
+  let mi = 0;
+  const nextMedia = (n = 1) => Array.from({length: n}).map(() => mi++ % N);
+  const rotateMedia = (n: number) => { const r = Array.from({length: n}, (_, i) => (mi + i) % N); mi++; return r; };
+  const mediaFor = (kind: SceneKind, layout: LayoutId) =>
+    kind === 'logo' || (layout === 'typeOnly' && kind === 'hook') ? [] : layout === 'collage' ? nextMedia(2) : layout === 'depthStack' || layout === 'cube' ? rotateMedia(3) : kind === 'cta' ? [0] : nextMedia(1);
+  const firstPass = beats.map((b, i) => mediaFor(b.kind, layoutFor(b.kind, i)));
+
+  // 3. Every photo and clip the customer chose gets screen time: whatever the story beats did not use plays as a
+  //    gallery montage right after the hook, at least ~0.9 s per item, in groups of up to four.
+  const used = new Set(firstPass.flat());
+  const left = Array.from({length: N}, (_, i) => i).filter((i) => !used.has(i));
+  const groups: number[][] = [];
+  for (let i = 0; i < left.length; i += 4) groups.push(left.slice(i, i + 4));
+  const plan2 = beats.map((b, i) => ({b, media: firstPass[i], layout: layoutFor(b.kind, i)}));
+  plan2.splice(Math.min(1, plan2.length), 0, ...groups.map((g) => ({b: {kind: 'gallery' as SceneKind}, media: g, layout: 'montage' as LayoutId})));
+
+  // 4. Allocate screen time by the theme's pacing weights (accounting for transition overlaps).
   const T = theme.pacing.transitionFrames;
-  const weights = beats.map((b) => theme.pacing.weights[b.kind] ?? 1);
+  const weights = plan2.map((x) => (x.b.kind === 'gallery' ? 0.5 * x.media.length : theme.pacing.weights[x.b.kind] ?? 1));
+  const minF = plan2.map((x) => (x.b.kind === 'gallery' ? 27 * x.media.length + T : 36));
   const wsum = weights.reduce((a, b) => a + b, 0);
-  const trans = beats.map((_, i) => (i === 0 ? 'cut' : theme.motion.transitions[(i - 1) % theme.motion.transitions.length]));
+  const trans = plan2.map((_, i) => (i === 0 ? 'cut' : theme.motion.transitions[(i - 1) % theme.motion.transitions.length]));
   const overlaps = trans.filter((t, i) => i > 0 && t !== 'cut').length;
   const budget = total + T * overlaps;
-  let frames = weights.map((w) => Math.max(36, Math.round((budget * w) / wsum)));
-  const diff = budget - frames.reduce((a, b) => a + b, 0);
-  frames[0] += diff; // land exactly on the requested duration
+  const frames = weights.map((w, i) => Math.max(minF[i], Math.round((budget * w) / wsum)));
+  // land exactly on the requested duration: take any surplus from the longest scenes
+  let diff = budget - frames.reduce((a, b) => a + b, 0);
+  while (diff < 0) { const j = frames.indexOf(Math.max(...frames)); const cut = Math.min(-diff, frames[j] - minF[j]); if (cut <= 0) break; frames[j] -= cut; diff += cut; }
+  frames[0] += diff;
 
-  // 3. Assign media round-robin (collages take two), layouts and transitions from the theme vocabulary.
-  let mi = 0;
-  const nextMedia = (n = 1) => Array.from({length: n}).map(() => mi++ % brief.media.length);
-  // multi-photo 3D layouts: a different photo leads each time, the others fill the depth behind it
-  const rotateMedia = (n: number) => { const r = Array.from({length: n}, (_, i) => (mi + i) % brief.media.length); mi++; return r; };
-  const scenes: Scene[] = beats.map((b, i) => {
-    const layouts = (theme.layouts[b.kind] ?? theme.layouts.default) as LayoutId[];
-    const layout = layouts[i % layouts.length];
-    const media = b.kind === 'logo' || (layout === 'typeOnly' && b.kind === 'hook') ? [] : layout === 'collage' ? nextMedia(2) : layout === 'depthStack' || layout === 'cube' ? rotateMedia(3) : b.kind === 'cta' ? [0] : nextMedia(1);
-    const transitionIn = trans[i];
-    return {id: `s${i}-${b.kind}`, kind: b.kind, frames: frames[i], eyebrow: b.eyebrow, title: b.title, body: b.body, media, layout, transitionIn} as Scene;
+  // 5. Scenes. Ids are stable per kind so the customer's photo choices survive edits to other scenes.
+  const seen: Record<string, number> = {};
+  const scenes: Scene[] = plan2.map((x, i) => {
+    const n = (seen[x.b.kind] = (seen[x.b.kind] ?? 0) + 1);
+    const id = `${x.b.kind}-${n}`;
+    const chosen = brief.assign?.[id]?.filter((k) => k < N);
+    const media = chosen && chosen.length && x.media.length ? chosen.slice(0, Math.max(x.media.length, x.layout === 'montage' ? 8 : x.media.length)) : x.media;
+    return {id, kind: x.b.kind, frames: frames[i], eyebrow: x.b.eyebrow, title: x.b.title, body: x.b.body, media, layout: x.layout, transitionIn: trans[i]} as Scene;
   });
   void pick;
 
-  // 4. Captions from voiceover, spread across the reel in short phrases.
+  // 6. Captions from voiceover, spread across the reel in short phrases.
   const captions: ReelSpec['captions'] = [];
   if (brief.voiceover) {
     const words = brief.voiceover.split(/\s+/).filter(Boolean);
