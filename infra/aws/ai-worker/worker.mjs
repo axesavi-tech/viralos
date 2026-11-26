@@ -34,12 +34,16 @@ async function callClaude(req) {
     const r = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST", signal: ctl.signal,
       headers: { "x-api-key": KEY, "anthropic-version": "2023-06-01", "content-type": "application/json" },
-      body: JSON.stringify({ model: req.model, max_tokens: req.max_tokens || 8000, system: req.system || undefined, messages: req.messages }),
+      body: JSON.stringify({ model: req.model, max_tokens: req.max_tokens || 8000, system: req.system || undefined, messages: req.messages, tools: req.tools || undefined }),
     });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(j?.error?.message || `Claude returned ${r.status}`);
-    const text = (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("");
-    return { text, truncated: j.stop_reason === "max_tokens", usage: j.usage };
+    const blocks = (j.content || []).filter((b) => b.type === "text");
+    const text = blocks.map((b) => b.text).join("");
+    // web research: keep the pages Claude cited so the studio can show its sources
+    const sources = new Map();
+    blocks.forEach((b) => (b.citations || []).forEach((c) => { if (c.url && /^https:\/\//.test(c.url)) sources.set(c.url, { url: c.url, title: c.title || c.url }); }));
+    return { text, truncated: j.stop_reason === "max_tokens", usage: j.usage, sources: [...sources.values()], searches: j.usage?.server_tool_use?.web_search_requests || 0 };
   } finally { clearTimeout(t); }
 }
 
