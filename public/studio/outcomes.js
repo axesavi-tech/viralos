@@ -98,5 +98,5 @@ Return ONLY JSON: {"pick":0,"why":"one sentence"}`,{tier:'quick'});const n=Math.
 /* Today and the brand dashboard point to the outcome hub */
 /* leaving the page stops a run part-way (the step in progress is lost): ask first */
 addEventListener('beforeunload',e=>{if(Object.values(RUN).some(r=>!['done','error'].includes(r.phase))){e.preventDefault();e.returnValue=''}});
-window.KATHAVI_GROW={OUT,make,RUN};
+window.KATHAVI_GROW={OUT,make,RUN,pick:k=>{st.pick=k;st.w=null}};
 })();

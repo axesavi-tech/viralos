@@ -219,18 +219,18 @@ Return ONLY JSON of the complete corrected entry, same shape: ${ITEM_SCHEMA}`);
 
 /* ============ Views ============ */
 const ICON={home:'M3 11l9-7 9 7v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z',brands:'M12 2l3 6 6 .9-4.5 4.3 1 6.3L12 16.6 6.5 19.5l1-6.3L3 8.9 9 8z',campaigns:'M4 5h16M4 12h16M4 19h10',calendar:'M5 5h14v15H5zM5 10h14M9 3v4M15 3v4',studio:'M4 4h16v12H4zM8 20h8M12 16v4',images:'M4 5h16v14H4zM4 15l5-5 4 4 3-3 4 4',video:'M4 6h11v12H4zM15 10l5-3v10l-5-3',reels:'M4 4h16v16H4zM8 4v16M16 4v16M10.5 9.5l3 2.5-3 2.5z',more:'M5 12h.01M12 12h.01M19 12h.01',copy:'M5 4h10l4 4v12H5zM9 12h6M9 16h6',voice:'M12 3a3 3 0 013 3v6a3 3 0 01-6 0V6a3 3 0 013-3zM5 11a7 7 0 0014 0M12 18v3',ads:'M4 10v4l10 5V5L4 10zM18 9a4 4 0 010 6',catalogue:'M4 7l8-4 8 4v10l-8 4-8-4zM4 7l8 4 8-4M12 11v10',vault:'M5 4h14v16H5zM12 10a2 2 0 100 4 2 2 0 000-4z',analytics:'M4 20V10M10 20V4M16 20v-7M21 20H3',automations:'M4 12a8 8 0 0114-5l2-2v6h-6l2-2a5 5 0 10.5 6',account:'M12 8a4 4 0 100 8 4 4 0 000-8zM3 12h2M19 12h2M12 3v2M12 19v2'};
-const NAV=[['home','Journey','j'],['dashboard','Brand Dashboard','j'],['grow','Grow','j'],['discover','Discover','s'],['define','Define','s'],['design','Design','s'],['create','Create','s'],['experience','Experience','s'],['launch','Launch','s'],['learn','Learn','s'],['genome','Brand Genome','j'],
+const NAV=[['week','This week','j'],['home','Brand journey','j'],['dashboard','Brand Dashboard','j'],['grow','Grow','j'],['discover','Discover','s'],['define','Define','s'],['design','Design','s'],['create','Create','s'],['experience','Experience','s'],['launch','Launch','s'],['learn','Learn','s'],['genome','Brand Genome','j'],
  ['calendar','Content','w'],['studio','Studio','w'],['analytics','Results','w'],
  ['today','Today','t'],['brands','My Brands','t'],['campaigns','Campaigns','t'],['copy','Copy Studio','t'],['voice','Voice Studio','t'],['ads','Ad Studio','t'],['catalogue','Product Catalogue','t'],['vault','Brand Vault','t'],['automations','Automations','t'],
  ['images','New photo','h'],['video','Voice & subtitles','h'],['reels','Cinematic reel','h'],['account','Settings','x']];
 function svg(k){return`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${ICON[k]}"/></svg>`}
 /* Navigation follows the brand journey: Journey, the seven stages, the Brand Genome, then the studio tools (folded away) and settings. */
-function buildNav(){const open=pref.get('navTools',false)||NAV.some(n=>n[2]==='t'&&n[0]===cur.view);const M=['home','dashboard','grow','genome'];
+function buildNav(){const open=pref.get('navTools',false)||NAV.some(n=>n[2]==='t'&&n[0]===cur.view);const M=['week','grow','studio','dashboard'];
  const btn=([k,l,g],i)=>`<button class="vx-nav${g==='s'?' vx-stage':''}" type="button" data-go="${k}"${M.includes(k)?' data-m="1"':''}>${g==='s'?`<span class="vx-sn">${NAV.filter(n=>n[2]==='s').findIndex(n=>n[0]===k)+1}</span>`:svg(k)}<span>${l}</span></button>`;
  const grp=g=>NAV.filter(n=>(n[2]||'x')===g);
  /* Grow sits with the dashboard at the top; the Brand Genome closes the journey (it had dropped out of the menu when Grow was added) */
  const J=k=>btn(grp('j').find(n=>n[0]===k));
- q('#vxNav').innerHTML=J('home')+J('dashboard')+J('grow')+`<div class="vx-navlab">Brand journey</div>`+grp('s').map(btn).join('')+J('genome')+'<hr>'+
+ q('#vxNav').innerHTML=J('week')+J('grow')+J('dashboard')+`<div class="vx-navlab">Brand journey</div>`+J('home')+grp('s').map(btn).join('')+J('genome')+'<hr>'+
   grp('w').map(btn).join('')+'<hr>'+
   `<button class="vx-nav vx-navtog" type="button" data-act="navtools" aria-expanded="${open}">${svg('more')}<span>More tools</span><b aria-hidden="true">${open?'–':'+'}</b></button><div class="vx-navgrp"${open?'':' hidden'}>${grp('t').map(btn).join('')}</div><hr>`+
   grp('x').map(btn).join('')+`<button class="vx-nav vx-more" type="button" data-act="navmore" aria-expanded="false">${svg('more')}<span>More</span></button>`}
@@ -819,10 +819,12 @@ function importBackup(t){try{const o=JSON.parse(t);let n=0;Object.values(o).forE
 function applyTheme(){const t=pref.get('theme','system');if(t==='system')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t}
 
 /* ============ Boot ============ */
-async function boot(){applyTheme();buildNav();bind();paintCredits();const start=location.hash.slice(1)||'home';go(start);
+async function boot(){applyTheme();buildNav();bind();paintCredits();const start=location.hash.slice(1)||'week';go(start);
   await Store.init();paintCredits();
   if(Store.mode==='offline'){const box=document.createElement('div');box.className='vx-card vx-offline';box.setAttribute('role','alert');box.innerHTML='<h2>We could not reach your account</h2><p class="vx-muted">Your brands and campaigns are safe on Kathavi. The connection to your account did not answer for about a minute. Try again in a moment.</p><button class="vx-btn pri" type="button" onclick="location.reload()">Try again</button>';qa('.vx-view').forEach(x=>x.hidden=true);(q('.vx-main')||document.body).prepend(box);const sb=q('#vxStore');if(sb)sb.textContent='Not connected';return}
   const b=brand();if(b){setBrand(b);restoreMedia()}
+  /* no brand yet: the first screen is bringing one in */
+  if(cur.view==='week'&&!(b&&(b.genome||b.dna))){go('home');return}
   const sb=q('#vxStore');if(sb)sb.textContent=Store.mode==='cloud'?'Saved to your account':'Saved in this browser';render(cur.view)}
 window.VIRALOS={toStudio,pool,fixItem,genStrategy,genIntel,genDirections,genBatch,mkItem,setCamp,id6,OBJECTIVES,CHANNELS,dropField,Store,go,quality:(it)=>quality(it,brand()),slotPlan,runQA,exportZip,cur,VIEWS,AFTER,ACT,FORM,NAV,ICON,render,rerender,buildNav,head,chip,h,q,qa,list,words,fmtD,todayISO,addDays,brand,camp,camps,items,Session,notify,busy,done,FORMATS,tplFor,tplList,renderItemImages,renderStill,withCopy,copyFor,vidScenes,saveBlob,paintCredits,rate,copyText,needBrand,needCamp,campPicker,brandBrief,askJSON,errText,setLength,confirmBox};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
