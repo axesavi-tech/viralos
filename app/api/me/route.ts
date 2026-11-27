@@ -1,3 +1,4 @@
+import { DEFAULT_RATES } from "@/lib/credits";
 import { ctx, route, json } from "@/lib/ctx";
 export const dynamic = "force-dynamic";
 export const GET = route(async (req: Request) => {
@@ -17,7 +18,7 @@ export const GET = route(async (req: Request) => {
   ]);
   const s = Object.fromEntries((set.data || []).map((r: any) => [r.key, r.value]));
   return json({
-    user: c.user, role: c.role, workspace: ws.data, balance: bal.data ?? 0, isAdmin: !!adm.data, rates: s.rates || {}, plans: s.plans || {}, products: s.products || {},
+    user: c.user, role: c.role, workspace: ws.data, balance: bal.data ?? 0, isAdmin: !!adm.data, rates: { ...DEFAULT_RATES, ...(s.rates || {}) }, plans: s.plans || {}, products: s.products || {},
     members: mem.data || [], invites: inv.data || [], connections: (con.data || []).map((x: any) => ({ provider: x.provider, label: x.label, meta: x.meta, updated_at: x.updated_at })),
     voices: voices.data || [], ledger: ledger.data || [], payments: pays.data || [],
     gateways: { razorpay: !!process.env.RAZORPAY_KEY_ID, stripe: !!process.env.STRIPE_SECRET_KEY, razorpayKey: process.env.RAZORPAY_KEY_ID || null },
