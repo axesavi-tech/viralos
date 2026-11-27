@@ -34,7 +34,9 @@ const DEMOS: {key: string; label: string; theme: string}[] = [
 
 type Draft = Brief;
 type ParentBrand = {name?: string; tagline?: string; primary?: string; accent?: string; handle?: string};
-type ParentMsg = {type: 'kathavi:brand'; ws?: string | null; brand?: ParentBrand | null; media?: {src: string; kind?: 'image' | 'video'; poster?: string}[]; product?: {name?: string; price?: string} | null};
+type ParentEntry = {hook?: string; story?: string; features?: string[]; offer?: string; price?: string; cta?: string; objective?: string; productName?: string};
+type ParentMsg = {type: 'kathavi:brand'; ws?: string | null; brand?: ParentBrand | null; media?: {src: string; kind?: 'image' | 'video'; poster?: string}[]; product?: {name?: string; price?: string} | null; entry?: ParentEntry | null};
+const OBJ = ['launch', 'showcase', 'story', 'offer', 'awareness'];
 
 const hex = (v: unknown, fallback: string) => {
   const s = String(v ?? '').trim();
@@ -54,13 +56,15 @@ const fromBrand = (m: ParentMsg, durationSec: Draft['durationSec'] = 30): Draft 
     brand: {name, tagline: b.tagline?.slice(0, 60) || undefined, primary: hex(b.primary, '#222222'), accent: hex(b.accent, hex(b.primary, '#C9A96E')), handle: b.handle?.slice(0, 40) || undefined},
     themeId: 'quiet-luxury',
     durationSec,
-    objective: 'showcase',
-    hook: (b.tagline || `Meet ${name}.`).slice(0, 90),
-    story: undefined,
-    productName: m.product?.name?.slice(0, 60) || undefined,
-    features: [],
-    price: m.product?.price ? String(m.product.price).slice(0, 24) : undefined,
-    cta: 'Shop now',
+    // A calendar entry chosen in the studio brings its own words; otherwise start from the brand.
+    objective: (OBJ.includes(String(m.entry?.objective)) ? m.entry!.objective : 'showcase') as Draft['objective'],
+    hook: (m.entry?.hook || b.tagline || `Meet ${name}.`).slice(0, 90),
+    story: m.entry?.story?.slice(0, 140) || undefined,
+    productName: (m.entry?.productName || m.product?.name)?.slice(0, 60) || undefined,
+    features: (m.entry?.features || []).filter(Boolean).slice(0, 3).map((f) => String(f).slice(0, 40)),
+    offer: m.entry?.offer?.slice(0, 40) || undefined,
+    price: (m.entry?.price || (m.product?.price ? String(m.product.price) : '')).slice(0, 24) || undefined,
+    cta: (m.entry?.cta || 'Shop now').slice(0, 24),
     media: (m.media ?? []).filter((x) => x?.src).slice(0, MAX_MEDIA).map((x) => ({src: x.src, kind: x.kind, poster: x.poster, focusX: 0.5, focusY: 0.45})),
     intensity: 1,
     showSafeZones: false,
