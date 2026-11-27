@@ -43,7 +43,7 @@ function form(b,o){const w=st.w&&st.w.k===o.k?st.w:(st.w={k:o.k,brief:'',start:V
   <div class="vx-f"><label for="ko-days">Days</label><input type="number" id="ko-days" name="days" min="3" max="90" value="${w.days}"></div>
   ${Object.keys(V.FORMATS).map(k=>`<div class="vx-f"><label for="ko-m-${k}">${V.FORMATS[k]}s</label><input type="number" id="ko-m-${k}" name="mix_${k}" min="0" max="40" value="${+w.mix[k]||0}"></div>`).join('')}</div>
   <div class="vx-f"><span class="vx-lab">Channels</span><div class="vx-row">${V.CHANNELS.map(c=>`<label class="vx-tog"><input type="checkbox" name="ch" value="${c}" ${w.channels.includes(c)?'checked':''}> ${c}</label>`).join('')}</div></div></details>
- <div class="vx-row"><button class="vx-btn pri" type="submit">Make it <span class="ko-cost">· about ${Math.max(3,Math.round(sum(w.mix)/6)+3)} minutes · ${cost(w.mix)} credits</span></button><span class="vx-small vx-muted">You can review, change or regenerate every piece before anything is published.</span></div>
+ <div class="vx-row"><button class="vx-btn pri" type="submit">Make it <span class="ko-cost">· about ${Math.max(3,Math.round(sum(w.mix)/15)+4)} minutes · ${cost(w.mix)} credits</span></button><span class="vx-small vx-muted">You can review, change or regenerate every piece before anything is published.</span></div>
  <span class="vx-status" id="koSt"></span></form>`}
 
 function progress(r){const i=STEPS.findIndex(s=>s[0]===r.phase);return`<div class="vx-card ko-run" role="status" aria-live="polite"><div class="ko-run-h"><b>${h(r.label)}</b><span>${r.phase==='write'&&r.total?`${r.n} of ${r.total} pieces`:r.phase==='polish'&&r.total?`fixing ${r.n} of ${r.total}`:''}</span></div>
@@ -71,12 +71,13 @@ async function make(c){const b=Store.get(c.brandId)||brand();if(RUN[c.id]&&!['do
   r.phase='directions';paint();if(!c.directions||!c.directions.length)await V.genDirections(c,b);
   r.phase='pick';paint();if(c.dir==null){c.dir=await pickDirection(c,b);Store.put(c)}
   r.phase='write';const miss=()=>V.slotPlan(c).filter(s=>!Store.get('i_'+c.id.slice(2)+'_'+s.n));r.total=V.slotPlan(c).length;r.n=r.total-miss().length;paint();
-  const todo=miss();for(let i=0;i<todo.length;i+=5){const sl=todo.slice(i,i+5);const got=await V.genBatch(c,b,sl);
-   sl.forEach(s=>{const x=(got||[]).find(g=>+g.n===s.n);if(!x)return;const it=V.mkItem(c,s,x);it.status='Generated';V.runQA(it);Store.put(it)});r.n=r.total-miss().length;paint()}
+  const todo=miss(),batches=[];for(let i=0;i<todo.length;i+=5)batches.push(todo.slice(i,i+5));
+  await V.pool(batches,3,async sl=>{const got=await V.genBatch(c,b,sl);
+   sl.forEach(s=>{const x=(got||[]).find(g=>+g.n===s.n);if(!x)return;const it=V.mkItem(c,s,x);it.status='Generated';V.runQA(it);Store.put(it)});r.n=r.total-miss().length;paint()});
   /* quality pass: sign every caption with the brand (the most common miss), then let the editor fix what still fails, a few at a time */
   r.phase='polish';paint();const sign=b.handle?'@'+String(b.handle).replace(/^@/,''):b.name;
   V.items(c).forEach(it=>{const miss=(it.qa&&it.qa.checks||[]).some(x=>!x.ok&&/Brand name or handle/.test(x.label));if(miss&&it.caption!=null){it.caption=String(it.caption||'').trimEnd()+`\n\n— ${sign}`;V.runQA(it);Store.put(it)}});
-  const bad=V.items(c).filter(it=>it.qa&&!it.qa.allOk).slice(0,6);r.total=bad.length;r.n=0;for(const it of bad){try{await V.fixItem(it,'fix')}catch(e){}r.n++;paint()}
+  const bad=V.items(c).filter(it=>it.qa&&!it.qa.allOk).slice(0,6);r.total=bad.length;r.n=0;await V.pool(bad,3,async it=>{try{await V.fixItem(it,'fix')}catch(e){}r.n++;paint()});
   r.phase='done';notify(`${r.label}: ${V.items(c).length} pieces ready to review.`)}
  catch(e){r.phase='error';r.err=V.errText(e)}
  paint()}
