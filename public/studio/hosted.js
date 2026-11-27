@@ -9,7 +9,7 @@ const ROLE_L={owner:'Owner',admin:'Admin',brand_manager:'Brand manager',creative
 const inr=m=>'₹'+(m/100).toLocaleString('en-IN'),usd=m=>'$'+(m/100).toFixed(2);
 const cr=n=>Number(n||0).toLocaleString('en-IN');
 const ok=x=>x&&!['viewer','analyst'].includes(ME?.role);
-window.addEventListener('vx:me',e=>{ME=e.detail;window.VX_BAL=ME.balance;try{V.paintCredits()}catch(err){}});
+window.addEventListener('vx:me',e=>{ME=e.detail;window.VX_BAL=ME.balance;window.VX_PROVIDERS=ME.providers||{};try{V.paintCredits()}catch(err){}});
 async function run(stId,btn,fn){const st=q('#'+stId);if(btn)btn.disabled=true;try{await fn(st||{set innerHTML(v){},set textContent(v){}})}catch(e){console.error(e);const m=e&&e.message||'Something went wrong.';if(st)st.textContent=m;else V.notify(m)}finally{if(btn&&document.contains(btn))btn.disabled=false}}
 const spin=t=>`<span class="vx-busy"></span> ${h(t)}`;
 const rateOf=k=>(ME&&ME.rates&&ME.rates[k])??0;

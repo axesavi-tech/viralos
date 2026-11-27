@@ -237,18 +237,25 @@ const brandPick=()=>{const bs=Store.all('brand');const b=brand();return bs.lengt
 const spChip=k=>`<span class="jx-sp">${av(k,'sm')}<span>${h(SPEC[k].n)}</span></span>`;
 const ring=(pct,lbl)=>`<span class="jx-ring" style="--p:${pct}" role="img" aria-label="${lbl||pct+'% decided'}"><b>${pct}%</b></span>`;
 
-function startView(){return head('Start your brand','Describe your idea in a line. Kathavi’s specialists turn it into a brand you shape, decision by decision.')+`
+/* Two ways in: bring an existing brand (its website does most of the work) or start from an idea. Either way the
+   specialists build the Brand Genome automatically and the owner lands on what they want to achieve. */
+function startView(){const have=V.cur.jhave!==false;return head(have?'Bring your brand in':'Start your brand',have?'Your website and one line about the brand are enough. Kathavi’s specialists read them, research your market and build your Brand Genome.':'Describe your idea in a line. Kathavi’s specialists turn it into a brand you can change at any point.')+`
+ <div class="jx-paths" role="tablist"><button type="button" role="tab" class="ks-mode ${have?'on':''}" aria-selected="${have}" data-act="jhave" data-v="1">I have a brand</button><button type="button" role="tab" class="ks-mode ${have?'':'on'}" aria-selected="${!have}" data-act="jhave" data-v="0">I’m starting from an idea</button></div>
  <form class="vx-card jx-start" data-form="jstart">
-  <label class="jx-big" for="jx-idea">What are you building?</label>
+  ${have?`<label class="jx-sm" for="jx-name">Brand name</label><input id="jx-name" name="name" maxlength="60" autocomplete="organization" required>
+  <label class="jx-sm" for="jx-site">Website or online store <span class="vx-muted">(recommended)</span></label><input id="jx-site" name="website" type="url" inputmode="url" placeholder="https://yourbrand.com" maxlength="200">
+  <label class="jx-big" for="jx-idea">What do you sell, and to whom?</label>
+  <textarea id="jx-idea" name="idea" rows="2" required maxlength="600" placeholder="Premium handwoven Sambalpuri Ikat sarees for women in Pune who value craft"></textarea>`
+  :`<label class="jx-big" for="jx-idea">What are you building?</label>
   <textarea id="jx-idea" name="idea" rows="3" required maxlength="600" placeholder="Handwoven Sambalpuri ikat sarees for women who wear tradition in a modern way"></textarea>
-  <fieldset class="jx-type"><legend>It is a</legend>${[['physical','Physical product'],['digital','Digital product or app'],['service','Service']].map(([v,l],i)=>`<label><input type="radio" name="type" value="${v}" ${i===0?'checked':''}><span>${l}</span></label>`).join('')}</fieldset>
   <label class="jx-sm" for="jx-name">Brand name <span class="vx-muted">(optional: leave blank and we will suggest names)</span></label>
-  <input id="jx-name" name="name" maxlength="60" autocomplete="off">
-  <label class="jx-auto"><input type="checkbox" name="auto" checked><span><b>Build my whole brand now</b> · live market research, all 7 stages decided by the specialists, and your Brand Dashboard. About 5 minutes and ${25+20*COST()+COST()} credits. You can change anything afterwards.</span></label>
-  <div class="vx-row"><button class="vx-btn pri" type="submit">Start my brand</button><span class="vx-small vx-muted">Untick to go step by step: the Discover stage first (about ${4*COST()} credits), approving each decision.</span></div>
+  <input id="jx-name" name="name" maxlength="60" autocomplete="off">`}
+  <fieldset class="jx-type"><legend>It is a</legend>${[['physical','Physical product'],['digital','Digital product or app'],['service','Service']].map(([v,l],i)=>`<label><input type="radio" name="type" value="${v}" ${i===0?'checked':''}><span>${l}</span></label>`).join('')}</fieldset>
+  <label class="jx-auto"><input type="checkbox" name="auto" checked><span><b>Build my whole brand now</b> · live market research, every brand decision made by the specialists, and your Brand Dashboard. About 5 minutes and ${25+20*COST()+COST()} credits. You can change anything afterwards.</span></label>
+  <div class="vx-row"><button class="vx-btn pri" type="submit">${have?'Bring my brand in':'Start my brand'}</button><span class="vx-small vx-muted">Untick to go step by step, approving each decision.</span></div>
  </form>
- <div class="vx-card jx-how"><h2>How it works</h2><ol class="jx-steps">${STAGES.map(s=>`<li><b>${s.n}. ${s.name}</b><span>${h(s.q)}</span></li>`).join('')}</ol>
- <p class="vx-small vx-muted">At every step a specialist recommends, explains why and offers alternatives. You accept, edit, reject or write your own. Accepted decisions become your Brand Genome, and every studio tool uses it.</p></div>`}
+ <div class="vx-card jx-how"><h2>What happens next</h2><ol class="jx-steps"><li><b>Your brand, decided</b><span>Positioning, audience, voice, look and launch plan, each with the reasoning. Change anything.</span></li><li><b>Pick a result</b><span>Launch, sales, followers, a festive campaign… Kathavi plans and makes the content.</span></li><li><b>Approve and publish</b><span>Each week you see what’s ready, what’s going out and what worked.</span></li></ol></div>`}
+ACT.jhave=el=>{V.cur.jhave=el.dataset.v==='1';rerender()};
 
 function nextStep(b){for(const s of STAGES)for(const d of s.D){const p=dProg(b,d);if(p.n<p.of)return{s,d,p}}return null}
 
@@ -333,10 +340,10 @@ ACT.jsave=el=>{const key=el.dataset.key,{d,f}=keyParts(key),t=q('#ed-'+CSS.escap
  const b=brand(),g=G(b),s=g.f[key]||{};g.f[key]={...s,value:v,status:'edited',by:'you',at:Date.now()};cur.jedit=null;log(b,d,'wrote their own',f);save(b);rerender()};
 ACT.jexport=()=>{const b=brand();V.copyText(`${b.name} — Brand Genome\n\n`+DNA_SECTIONS.map(([k,l])=>{const rows=[];ALL_D.forEach(d=>d.F.forEach(f=>{const v=valOf(b,fk(d,f));if(v!=null&&f.dna===k)rows.push(`${f.l}: ${show(f,v)}`)}));return rows.length?`${l}\n${rows.join('\n')}`:''}).filter(Boolean).join('\n\n'))};
 document.addEventListener('change',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.jin){const b=brand();if(!b)return;G(b).inputs[t.dataset.jin]=t.value.trim();Store.put(b)}});
-V.FORM.jstart=async f=>{const fd=new FormData(f);const idea=String(fd.get('idea')||'').trim();if(!idea)return;const type=String(fd.get('type')||'physical'),name=String(fd.get('name')||'').trim();
- const all=Store.all('brand');const b={id:'b_'+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3),type:'brand',created:Date.now(),name:name||'',handle:'',website:'',industry:'',desc:idea,products:'',audience:'',competitors:'',guidelines:'',objective:'',
+V.FORM.jstart=async f=>{const fd=new FormData(f);const idea=String(fd.get('idea')||'').trim();if(!idea)return;const type=String(fd.get('type')||'physical'),name=String(fd.get('name')||'').trim();let site=String(fd.get('website')||'').trim();if(site&&!/^https?:\/\//i.test(site))site='https://'+site;
+ const all=Store.all('brand');const b={id:'b_'+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3),type:'brand',created:Date.now(),name:name||'',handle:'',website:site,industry:'',desc:idea,products:'',audience:'',competitors:'',guidelines:'',objective:'',
   dna:null,src:{},locked:{},approved:false,versions:[],colors:{primary:'#1E2A3A',secondary:'#C8A97E',light:'#F5F1EA'},vault:{taglines:[],models:[],voices:[],licences:'',photos:[],logo:null},products_list:[],
-  genome:{v:1,type,idea,f:{},inputs:{},notes:{},log:[]}};
+  genome:{v:1,type,idea:site?`${idea} (website: ${site})`:idea,f:{},inputs:{},notes:{},log:[]}};
  if(!name){b.name='New brand'}
  if(name){b.genome.f['naming.name']={value:name,status:'edited',by:'you',at:Date.now()}}
  V.cur.jstart=false;Store.put(b);V.cur.brand=b.id;try{localStorage.setItem('viralos.pref.brand',JSON.stringify(b.id))}catch(e){}void all;
