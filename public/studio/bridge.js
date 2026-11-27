@@ -18,10 +18,10 @@ async function api(path,opts={}){
 async function me(force){if(ME&&!force)return ME;if(!mePromise||force)mePromise=api('/api/me').then(d=>{ME=d;WS=d.workspace&&d.workspace.id;window.VX_BAL=d.balance;window.VX_RATES=d.rates;window.dispatchEvent(new CustomEvent('vx:me',{detail:d}));return d}).finally(()=>{mePromise=null});return mePromise}
 let refreshT=0;function refresh(){clearTimeout(refreshT);refreshT=setTimeout(()=>me(true).then(()=>{try{VIRALOS.paintCredits()}catch(e){}}).catch(()=>{}),400)}
 const b64=blob=>new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(String(fr.result).split(',')[1]);fr.onerror=rej;fr.readAsDataURL(blob)});
-function parseLoose(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw{code:'bad_json',message:'Claude returned no JSON'};const s=t.slice(a,b+1);try{return JSON.parse(s)}catch(e){
+function parseLoose(t){const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<a)throw{code:'bad_json',message:'The AI returned an unreadable answer'};const s=t.slice(a,b+1);try{return JSON.parse(s)}catch(e){
  /* models sometimes put raw line breaks or tabs inside strings, or leave a trailing comma: repair those before giving up */
  let o='',q=false,esc=false;for(const ch of s){if(q){if(esc){esc=false;o+=ch;continue}if(ch==='\\'){esc=true;o+=ch;continue}if(ch==='"'){q=false;o+=ch;continue}if(ch==='\n'){o+='\\n';continue}if(ch==='\r')continue;if(ch==='\t'){o+='\\t';continue}o+=ch}else{if(ch==='"')q=true;o+=ch}}
- o=o.replace(/,\s*([}\]])/g,'$1');try{return JSON.parse(o)}catch(e2){throw{code:'bad_json',message:'Claude returned no JSON'}}}}
+ o=o.replace(/,\s*([}\]])/g,'$1');try{return JSON.parse(o)}catch(e2){throw{code:'bad_json',message:'The AI returned an unreadable answer'}}}}
 
 /* ---- capabilities ---- */
 async function sampleCall(input,opts={}){await me();const images=[];for(const bl of (opts.images||[]).slice(0,6)){if(bl&&bl.size)images.push({media_type:bl.type||'image/jpeg',data:await b64(bl)})}

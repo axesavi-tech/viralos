@@ -3,7 +3,7 @@ import "server-only";
 const EL = "https://api.elevenlabs.io/v1";
 const elKey = () => {
   const k = process.env.ELEVENLABS_API_KEY;
-  if (!k) throw new Error("ElevenLabs is not configured (ELEVENLABS_API_KEY missing).");
+  if (!k) throw new Error("Voice is not configured yet.");
   return k;
 };
 
@@ -15,16 +15,17 @@ async function fail(r: Response, who: string): Promise<never> {
   } catch {
     try { msg = await r.text(); } catch {}
   }
-  throw new Error(`${who}: ${typeof msg === "string" ? msg.slice(0, 300) : JSON.stringify(msg).slice(0, 300)}`);
+  throw new Error(`Voice service: ${typeof msg === "string" ? msg.slice(0, 300) : JSON.stringify(msg).slice(0, 300)}`);
 }
 
 /* ---------------- Voice: ElevenLabs instant voice clone ---------------- */
 
-export async function cloneVoice(name: string, samples: { blob: Blob; filename: string }[], description: string) {
+export async function cloneVoice(name: string, samples: { blob: Blob; filename: string }[], description: string, opts: { denoise?: boolean; labels?: Record<string, string> } = {}) {
   const fd = new FormData();
   fd.append("name", name);
   fd.append("description", description);
-  fd.append("remove_background_noise", "true");
+  fd.append("remove_background_noise", opts.denoise === false ? "false" : "true");
+  if (opts.labels && Object.keys(opts.labels).length) fd.append("labels", JSON.stringify(opts.labels));
   for (const s of samples) fd.append("files", s.blob, s.filename);
   const r = await fetch(`${EL}/voices/add`, { method: "POST", headers: { "xi-api-key": elKey() }, body: fd });
   if (!r.ok) await fail(r, "ElevenLabs voice cloning");

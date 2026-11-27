@@ -6,15 +6,20 @@ export const POST = route(async (req: Request) => {
   const c = await ctx(req); requireWrite(c);
   const fd = await req.formData();
   const name = String(fd.get("name") || "").trim().slice(0, 60), owner = String(fd.get("owner") || "").trim().slice(0, 80), scope = String(fd.get("scope") || "").slice(0, 200);
-  const sample = fd.get("sample");
+  // up to 25 samples, like the instant-clone flow: more clean speech gives a closer voice
+  const samples = fd.getAll("sample").filter((x): x is File => x instanceof File && x.size > 0).slice(0, 25);
   if (!name || !owner) throw new HttpError(400, "Name the voice and its owner.");
   if (fd.get("verified") !== "true") throw new HttpError(400, "A voice can only be cloned with the owner's written consent.");
-  if (!(sample instanceof File) || sample.size < 50_000) throw new HttpError(400, "Upload at least 30 seconds of clear speech.");
-  if (sample.size > 25 * 1024 * 1024) throw new HttpError(413, "Voice samples can be up to 25 MB.");
+  const total = samples.reduce((a, f) => a + f.size, 0);
+  if (!samples.length || total < 50_000) throw new HttpError(400, "Add at least 30 seconds of clear speech.");
+  if (samples.some((f) => f.size > 25 * 1024 * 1024) || total > 60 * 1024 * 1024) throw new HttpError(413, "Each sample can be up to 25 MB, 60 MB in all.");
+  const labels: Record<string, string> = {};
+  for (const k of ["language", "accent", "gender", "age", "use_case"]) { const v = String(fd.get(k) || "").trim().slice(0, 40); if (v) labels[k] = v; }
+  const description = String(fd.get("description") || "").slice(0, 300);
   const ch = await charge(c, "voice_clone");
   try {
-    const r = await cloneVoice(`Kathavi · ${name}`, [{ blob: sample, filename: sample.name || "sample.mp3" }], `Cloned with consent of ${owner} for ${scope}`);
-    const consent = { owner, scope, statement: "Owner's written consent confirmed by " + (c.user.email || c.user.id), at: new Date().toISOString(), by: c.user.id };
+    const r = await cloneVoice(`Kathavi · ${name}`, samples.map((f) => ({ blob: f, filename: f.name || "sample.mp3" })), `${description ? description + ". " : ""}Cloned with consent of ${owner} for ${scope}`, { denoise: fd.get("denoise") !== "false", labels });
+    const consent = { owner, scope, labels, description, samples: samples.length, statement: "Owner's written consent confirmed by " + (c.user.email || c.user.id), at: new Date().toISOString(), by: c.user.id };
     const ins = await c.sb.from("vx_voices").insert({ workspace_id: c.ws, el_voice_id: r.voice_id, name, consent, created_by: c.user.id }).select("id,name,consent,created_at").single();
     if (ins.error) { await deleteVoice(r.voice_id); throw new Error(ins.error.message); }
     await c.sb.from("vx_audit").insert({ workspace_id: c.ws, user_id: c.user.id, action: "voice_clone", meta: { name, owner } });

@@ -284,7 +284,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 
     <div class="tabpane" id="paneE" hidden>
       <section class="card" id="insp"></section>
-      <section class="card ai"><h3>AI decorate</h3><p>Claude, on its most capable model tier, looks at your current design and places stickers, text, frames and emoji in the right spots. Everything it adds stays draggable.</p>
+      <section class="card ai"><h3>AI decorate</h3><p>Kathavi's art director looks at your current design and places stickers, text, frames and emoji in the right spots. Everything it adds stays draggable.</p>
         <div class="row"><button class="btn primary sm" id="aiDeco" type="button">Decorate this design</button></div><span class="status" id="decoStatus"></span></section>
       <section class="card"><h3>Text</h3><div class="pal" id="pal-text"></div></section>
       <section class="card"><h3>Stickers &amp; badges</h3><div class="pal" id="pal-stk"></div></section>
@@ -1605,7 +1605,7 @@ function buildGrid(){const G=$('#grid');G.innerHTML='';cards=[];let list=allTpl(
   list.forEach((tpl,idx)=>{const b=document.createElement('button');b.type='button';b.className='tpl';b.setAttribute('aria-current',tpl.id===state.sel);b.title=tpl.desc;
     const[W,H]=tpl.size;const tw=240,th=Math.round(tw*H/W);const cv=document.createElement('canvas');cv.width=tw;cv.height=th;
     const sc=state.scores[tpl.id],why=state.ai?.picks?.[tpl.id];const top=f==='rec'&&idx<4&&tpl.id!=='custom';
-    b.innerHTML=`<div class="th">${why?'<span class="badge">AI pick</span>':top?'<span class="badge">Top match</span>':''}<span class="badge k">${tpl.kind==='reel'?'Reel '+tpl.dur+'s':tpl.size===SQ?'1:1':'4:5'}</span></div><span class="nm">${esc(tpl.name)}</span><span class="sub"><span>${esc((tpl.tags||[]).join(' · '))}</span><span class="score ${sc>=80?'hi':''}">${tpl.id==='custom'?'':sc+'%'}</span></span>${why?`<span class="why">${esc(why)}</span>`:''}`;
+    b.innerHTML=`<div class="th">${why?'<span class="badge">AI pick</span>':top?'<span class="badge">Top match</span>':''}<span class="badge k">${tpl.kind==='reel'?'Reel '+tpl.dur+'s':tpl.size===SQ?'1:1':'4:5'}</span></div><span class="nm">${esc(tpl.name)}</span><span class="sub"><span>${esc((tpl.tags||[]).join(' · '))}</span><span class="score ${sc>=80?'hi':''}">${tpl.id==='custom'||!Number.isFinite(sc)?'':sc+'%'}</span></span>${why?`<span class="why">${esc(why)}</span>`:''}`;
     b.querySelector('.th').prepend(cv);b.onclick=()=>select(tpl.id);
     let raf=0;if(tpl.kind==='reel'){b.onmouseenter=()=>{if(reduce)return;const s0=performance.now();const g=cv.getContext('2d');const loop=n=>{renderTpl(g,tpl,((n-s0)/1000)%tpl.dur,tw/W);raf=requestAnimationFrame(loop)};raf=requestAnimationFrame(loop)};
       b.onmouseleave=()=>{cancelAnimationFrame(raf);renderTpl(cv.getContext('2d'),tpl,tpl.pt,tw/W)}}
