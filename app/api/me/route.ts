@@ -21,6 +21,6 @@ export const GET = route(async (req: Request) => {
     members: mem.data || [], invites: inv.data || [], connections: (con.data || []).map((x: any) => ({ provider: x.provider, label: x.label, meta: x.meta, updated_at: x.updated_at })),
     voices: voices.data || [], ledger: ledger.data || [], payments: pays.data || [],
     gateways: { razorpay: !!process.env.RAZORPAY_KEY_ID, stripe: !!process.env.STRIPE_SECRET_KEY, razorpayKey: process.env.RAZORPAY_KEY_ID || null },
-    providers: { claude: !!process.env.ANTHROPIC_API_KEY, fal: !!process.env.FAL_KEY, elevenlabs: !!process.env.ELEVENLABS_API_KEY, meta: !!(process.env.META_APP_ID && process.env.META_APP_SECRET) },
+    providers: { claude: !!process.env.ANTHROPIC_API_KEY, openai: !!process.env.OPENAI_API_KEY, gemini: !!process.env.GEMINI_API_KEY, runway: !!process.env.RUNWAYML_API_SECRET, fal: !!process.env.FAL_KEY, elevenlabs: !!process.env.ELEVENLABS_API_KEY, meta: !!(process.env.META_APP_ID && process.env.META_APP_SECRET), jwt: !!process.env.SUPABASE_JWT_SECRET },
   });
 });

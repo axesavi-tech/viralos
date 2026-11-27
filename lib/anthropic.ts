@@ -26,8 +26,8 @@ async function call(body: any, timeoutMs = TIMEOUT_MS) {
   } finally { clearTimeout(timer); }
   const j = await r.json().catch(() => ({}));
   if (!r.ok) {
-    const msg = j?.error?.message || `Claude returned ${r.status}`;
-    const e: any = new Error(r.status === 429 ? "Claude is busy. Try again in a minute." : msg);
+    const msg = j?.error?.message || `The AI service returned ${r.status}`;
+    const e: any = new Error(r.status === 429 ? "The AI is busy. Try again in a minute." : msg);
     e.code = r.status === 429 ? "rate_limited" : "provider_error";
     throw e;
   }
@@ -62,6 +62,6 @@ export async function research(model: string, prompt: string, maxUses = 6) {
 
 export function parseJSON(t: string) {
   const a = t.indexOf("{"), b = t.lastIndexOf("}");
-  if (a < 0 || b < a) throw new Error("Claude returned no JSON.");
+  if (a < 0 || b < a) throw new Error("The AI returned no JSON.");
   return JSON.parse(t.slice(a, b + 1));
 }
