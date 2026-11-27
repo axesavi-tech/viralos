@@ -20,9 +20,10 @@ const rate=k=>V.rate(k);
 const sum=m=>Object.values(m).reduce((a,n)=>a+(+n||0),0);
 const PL={reel:['reel','reels'],post:['post','posts'],carousel:['carousel','carousels'],story:['story','stories'],short:['Short','Shorts']};
 const mixText=m=>Object.entries(m).filter(([,n])=>n>0).map(([k,n])=>`${n} ${(PL[k]||[k,k+'s'])[n>1?1:0]}`).join(' · ');
-const cost=m=>rate('strategy')+(rate('research')||25)+rate('directions')+rate('journey')+Math.ceil(sum(m)/5)*rate('calendar');
-const STEPS=[['strategy','Strategy'],['research','Live market research'],['directions','Creative directions'],['pick','Choosing the best direction'],['write','Writing the content'],['done','Ready']];
-function channelsFor(b){const g=b&&b.genome&&b.genome.f||{};const t=JSON.stringify((g['gtm.channels']||{}).value||'')+' '+JSON.stringify((b&&b.channels)||'');const ch=V.CHANNELS.filter(c=>new RegExp(c.split(' ')[0],'i').test(t));return ch.length?ch.slice(0,3):['Instagram']}
+const cost=m=>rate('strategy')+(rate('research')||25)+rate('directions')+rate('journey')+Math.ceil(sum(m)/5)*rate('calendar')+Math.min(6,Math.ceil(sum(m)/4))*rate('fix');
+const STEPS=[['strategy','Strategy'],['research','Live market research'],['directions','Creative directions'],['pick','Choosing the best direction'],['write','Writing the content'],['polish','Quality pass'],['done','Ready']];
+function channelsFor(b){const g=b&&b.genome&&b.genome.f||{};const t=JSON.stringify((g['gtm.channels']||{}).value||'')+' '+JSON.stringify((b&&b.channels)||'');/* whole words only, and 'X' only as a capital on its own (it matched any letter x before) */
+ const ch=V.CHANNELS.filter(c=>c==='X'?/(^|[^A-Za-z])X([^A-Za-z]|$)|Twitter/.test(t):new RegExp('\\b'+c.split(' ')[0]+'\\b','i').test(t));return ch.length?ch.slice(0,3):['Instagram']}
 
 VIEWS.grow=()=>{const b=brand();if(!b)return V.head('Grow','Start from the result you want.')+V.needBrand();
  const runs=Object.values(RUN).filter(r=>r.brand===b.id&&r.phase!=='done'&&r.phase!=='error');
@@ -45,7 +46,7 @@ function form(b,o){const w=st.w&&st.w.k===o.k?st.w:(st.w={k:o.k,brief:'',start:V
  <div class="vx-row"><button class="vx-btn pri" type="submit">Make it <span class="ko-cost">· about ${Math.max(3,Math.round(sum(w.mix)/6)+3)} minutes · ${cost(w.mix)} credits</span></button><span class="vx-small vx-muted">You can review, change or regenerate every piece before anything is published.</span></div>
  <span class="vx-status" id="koSt"></span></form>`}
 
-function progress(r){const i=STEPS.findIndex(s=>s[0]===r.phase);return`<div class="vx-card ko-run" role="status" aria-live="polite"><div class="ko-run-h"><b>${h(r.label)}</b><span>${r.phase==='write'&&r.total?`${r.n} of ${r.total} pieces`:''}</span></div>
+function progress(r){const i=STEPS.findIndex(s=>s[0]===r.phase);return`<div class="vx-card ko-run" role="status" aria-live="polite"><div class="ko-run-h"><b>${h(r.label)}</b><span>${r.phase==='write'&&r.total?`${r.n} of ${r.total} pieces`:r.phase==='polish'&&r.total?`fixing ${r.n} of ${r.total}`:''}</span></div>
  <ol class="ko-steps">${STEPS.map((s,j)=>`<li class="${j<i?'ok':j===i?'now':''}">${s[1]}</li>`).join('')}</ol>${r.note?`<p class="vx-small vx-muted">${h(r.note)}</p>`:''}</div>`}
 function packRow(c){const its=V.items(c),ok=its.filter(i=>i.qa&&i.qa.allOk).length,r=RUN[c.id];const err=r&&r.phase==='error';
  return`<div class="ko-pack"><div><b>${h(c.outcome.label)}</b><span class="vx-small vx-muted">${h(c.name)} · ${its.length} pieces${its.length?`, ${ok} pass every check`:''}${c.outcome.brief?' · '+h(c.outcome.brief):''}</span>${err?`<span class="vx-small" style="color:var(--vx-bad,#b3261e)">Stopped: ${h(r.err)}</span>`:''}</div>
@@ -72,6 +73,10 @@ async function make(c){const b=Store.get(c.brandId)||brand();if(RUN[c.id]&&!['do
   r.phase='write';const miss=()=>V.slotPlan(c).filter(s=>!Store.get('i_'+c.id.slice(2)+'_'+s.n));r.total=V.slotPlan(c).length;r.n=r.total-miss().length;paint();
   const todo=miss();for(let i=0;i<todo.length;i+=5){const sl=todo.slice(i,i+5);const got=await V.genBatch(c,b,sl);
    sl.forEach(s=>{const x=(got||[]).find(g=>+g.n===s.n);if(!x)return;const it=V.mkItem(c,s,x);it.status='Generated';V.runQA(it);Store.put(it)});r.n=r.total-miss().length;paint()}
+  /* quality pass: sign every caption with the brand (the most common miss), then let the editor fix what still fails, a few at a time */
+  r.phase='polish';paint();const sign=b.handle?'@'+String(b.handle).replace(/^@/,''):b.name;
+  V.items(c).forEach(it=>{const miss=(it.qa&&it.qa.checks||[]).some(x=>!x.ok&&/Brand name or handle/.test(x.label));if(miss&&it.caption!=null){it.caption=String(it.caption||'').trimEnd()+`\n\n— ${sign}`;V.runQA(it);Store.put(it)}});
+  const bad=V.items(c).filter(it=>it.qa&&!it.qa.allOk).slice(0,6);r.total=bad.length;r.n=0;for(const it of bad){try{await V.fixItem(it,'fix')}catch(e){}r.n++;paint()}
   r.phase='done';notify(`${r.label}: ${V.items(c).length} pieces ready to review.`)}
  catch(e){r.phase='error';r.err=V.errText(e)}
  paint()}
@@ -80,7 +85,7 @@ async function liveIntel(c,b){const X=window.VX;if(!X)throw new Error('no resear
  const r=await X.api('/api/research',{json:{brief:`${V.brandBrief(b)}\nCampaign: ${c.name} — ${c.objective}, ${c.duration} days from ${c.start}, channels ${c.channels.join(', ')}. ${c.notes||''} Market: India first.`}});
  const j=r.job?await X.job(r.job):{status:'done',result:r};if(j.status!=='done')throw new Error(j.error||'research failed');
  const t=String(j.result.text||'').replace(/<\/?cite\b[^>]*>/gi,'');const a=t.indexOf('{'),z=t.lastIndexOf('}');const v=JSON.parse(t.slice(a,z+1));
- const src=j.result.sources||[];const cited=new Set(src.map(x=>x.url));(v.sections||[]).forEach(s=>(s.points||[]).forEach(p=>{if(p.label==='verified'&&!(p.source&&(cited.has(p.source)||/^https:\/\//.test(p.source))))p.label='hypothesis'}));
+ const src0=j.result.sources||[];const src=src0.length?src0:[...new Map((v.sections||[]).flatMap(s=>(s.points||[]).map(p=>p.source)).concat((v.trends||[]).map(t=>t.source)).filter(u=>/^https:\/\//.test(u||'')).map(u=>[u,{url:u,title:u.replace(/^https:\/\/(www\.)?/,'').split('/')[0]}])).values()];const cited=new Set(src.map(x=>x.url));(v.sections||[]).forEach(s=>(s.points||[]).forEach(p=>{if(p.label==='verified'&&!(p.source&&(cited.has(p.source)||/^https:\/\//.test(p.source))))p.label='hypothesis'}));
  c.intel={sections:v.sections,trends:v.trends,sources:src,searches:j.result.searches||0,live:true,at:Date.now()};Store.put(c)}
 async function pickDirection(c,b){const D=c.directions||[];if(D.length<2)return 0;
  try{const v=await V.askJSON('journey',`You are Kathavi's Creative Director. The owner wants this result: ${c.outcome?c.outcome.label:c.objective}${c.outcome&&c.outcome.brief?' ('+c.outcome.brief+')':''}.
@@ -90,5 +95,7 @@ ${D.map((d,i)=>`${i}. ${d.name} — ${d.style}: ${d.rationale}`).join('\n')}
 Return ONLY JSON: {"pick":0,"why":"one sentence"}`,{tier:'quick'});const n=Math.max(0,Math.min(D.length-1,+v.pick||0));c.dirWhy=String(v.why||'').slice(0,240);return n}catch(e){return 0}}
 
 /* Today and the brand dashboard point to the outcome hub */
+/* leaving the page stops a run part-way (the step in progress is lost): ask first */
+addEventListener('beforeunload',e=>{if(Object.values(RUN).some(r=>!['done','error'].includes(r.phase))){e.preventDefault();e.returnValue=''}});
 window.KATHAVI_GROW={OUT,make,RUN};
 })();
