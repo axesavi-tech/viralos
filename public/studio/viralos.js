@@ -187,6 +187,8 @@ const ITEM_SCHEMA=`{"n":0,"title":"","objective":"","persona":"","pillar":"","fu
  "scenes":[{"t":3,"visual":"","on_screen":"max 7 words","voiceover":"max 2.5 words per second","ai_prompt":"30+ word production prompt for an AI video model incl. 9:16"}] (reel/short only; t sums to duration; first t<=3),
  "slides":[{"headline":"max 8 words","body":"max 25 words"}] (carousel only, 5-8 slides),
  "frames":[{"t":5,"text":"max 12 words","sticker":"poll/quiz/link or empty"}] (story only, 3-5 frames)}`;
+/* run fn over items, at most n at once; the first error stops new work and is thrown after the running ones finish */
+async function pool(list,n,fn){let i=0,err=null;await Promise.all(Array.from({length:Math.min(n,list.length)},async()=>{while(i<list.length&&!err){const x=list[i++];try{await fn(x)}catch(e){err=err||e}}}));if(err)throw err}
 async function genBatch(c,b,slots){const dir=c.directions?.[c.dir]||{};
   const v=await askJSON('calendar',`You are the content lead of a world-class creative department. Write finished, ready-to-publish calendar entries.
 ${brandBrief(b)}
@@ -613,8 +615,10 @@ const ACT={
  gen1:el=>{const c=camp(),b=brand(),k=el.dataset.k;busy('campSt',el,async st=>{st.innerHTML='<span class="vx-busy"></span> Working…';if(k==='strategy')await genStrategy(c,b);if(k==='intel')await genIntel(c,b);if(k==='directions')await genDirections(c,b);st.textContent='';rerender()})},
  pickdir:el=>{const c=camp();c.dir=+el.dataset.i;Store.put(c);cur.cstep='gen';rerender()},
  gencal:el=>{const c=camp(),b=brand();busy('campSt',el,async st=>{const miss=slotPlan(c).filter(s=>!Store.get('i_'+c.id.slice(2)+'_'+s.n));
-   for(let i=0;i<miss.length;i+=5){const sl=miss.slice(i,i+5);st.innerHTML=`<span class="vx-busy"></span> Writing entries ${i+1}–${i+sl.length} of ${miss.length}…`;const got=await genBatch(c,b,sl);
-     sl.forEach(s=>{const x=got.find(g=>+g.n===s.n);if(!x)return;const it=mkItem(c,s,x);it.status='Generated';runQA(it);Store.put(it)});if(cur.view==='campaigns')q('#view-campaigns .vx-meter i')&&(q('#view-campaigns .vx-meter i').style.width=(items(c).length/slotPlan(c).length*100)+'%')}
+   /* batches of 5 are independent of each other, so three are written at the same time (about 3x faster) */
+   const batches=[];for(let i=0;i<miss.length;i+=5)batches.push(miss.slice(i,i+5));let done=0;const show=()=>{st.innerHTML=`<span class="vx-busy"></span> Writing ${miss.length} entries, three batches at a time… ${done} of ${miss.length} done`};show();
+   await pool(batches,3,async sl=>{const got=await genBatch(c,b,sl);
+     sl.forEach(s=>{const x=got.find(g=>+g.n===s.n);if(!x)return;const it=mkItem(c,s,x);it.status='Generated';runQA(it);Store.put(it)});done+=sl.length;show();if(cur.view==='campaigns')q('#view-campaigns .vx-meter i')&&(q('#view-campaigns .vx-meter i').style.width=(items(c).length/slotPlan(c).length*100)+'%')})
    done('campSt',`Calendar written: ${items(c).length} entries, ${items(c).filter(i=>i.qa?.allOk).length} pass every check.`)})},
  fixall:el=>{const its=items().filter(i=>i.qa&&!i.qa.allOk);busy('campSt',el,async st=>{let n=0;for(const it of its){st.innerHTML=`<span class="vx-busy"></span> Fixing ${++n} of ${its.length}…`;await fixItem(it)}done('campSt',`Done. ${items().filter(i=>i.qa?.allOk).length} of ${items().length} entries pass every check.`)})},
  pause:()=>{const c=camp();c.paused=!c.paused;Store.put(c);rerender()},
@@ -798,6 +802,6 @@ async function boot(){applyTheme();buildNav();bind();paintCredits();const start=
   if(Store.mode==='offline'){const box=document.createElement('div');box.className='vx-card vx-offline';box.setAttribute('role','alert');box.innerHTML='<h2>We could not reach your account</h2><p class="vx-muted">Your brands and campaigns are safe on Kathavi. The connection to your account did not answer for about a minute. Try again in a moment.</p><button class="vx-btn pri" type="button" onclick="location.reload()">Try again</button>';qa('.vx-view').forEach(x=>x.hidden=true);(q('.vx-main')||document.body).prepend(box);const sb=q('#vxStore');if(sb)sb.textContent='Not connected';return}
   const b=brand();if(b){setBrand(b);restoreMedia()}
   const sb=q('#vxStore');if(sb)sb.textContent=Store.mode==='cloud'?'Saved to your account':'Saved in this browser';render(cur.view)}
-window.VIRALOS={fixItem,genStrategy,genIntel,genDirections,genBatch,mkItem,setCamp,id6,OBJECTIVES,CHANNELS,dropField,Store,go,quality:(it)=>quality(it,brand()),slotPlan,runQA,exportZip,cur,VIEWS,AFTER,ACT,FORM,NAV,ICON,render,rerender,buildNav,head,chip,h,q,qa,list,words,fmtD,todayISO,addDays,brand,camp,camps,items,Session,notify,busy,done,FORMATS,tplFor,tplList,renderItemImages,renderStill,withCopy,copyFor,vidScenes,saveBlob,paintCredits,rate,copyText,needBrand,needCamp,campPicker,brandBrief,askJSON,errText,setLength,confirmBox};
+window.VIRALOS={pool,fixItem,genStrategy,genIntel,genDirections,genBatch,mkItem,setCamp,id6,OBJECTIVES,CHANNELS,dropField,Store,go,quality:(it)=>quality(it,brand()),slotPlan,runQA,exportZip,cur,VIEWS,AFTER,ACT,FORM,NAV,ICON,render,rerender,buildNav,head,chip,h,q,qa,list,words,fmtD,todayISO,addDays,brand,camp,camps,items,Session,notify,busy,done,FORMATS,tplFor,tplList,renderItemImages,renderStill,withCopy,copyFor,vidScenes,saveBlob,paintCredits,rate,copyText,needBrand,needCamp,campPicker,brandBrief,askJSON,errText,setLength,confirmBox};
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
