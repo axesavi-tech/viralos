@@ -98,7 +98,7 @@ const prevCamp=V.AFTER.campaigns;V.AFTER.campaigns=(el,o)=>{if(prevCamp)prevCamp
     const j=r.job?await X.job(r.job,(x,i)=>{st.innerHTML=spin(i<8?'Searching the web and reading sources…':'Still researching: deep searches can take a few minutes…')}):{status:'done',result:r};
     if(j.status!=='done')throw{message:(j.error||'The research did not finish.')+(j.refunded?' Your credits were refunded.':'')};
     const t=String(j.result.text||'').replace(/<\/?cite\b[^>]*>/gi,'');const a=t.indexOf('{'),z=t.lastIndexOf('}');let v;try{v=JSON.parse(t.slice(a,z+1))}catch(e){throw{message:'The research came back unreadable. Try again.'}}
-    const src=j.result.sources||[];const cited=new Set(src.map(x=>x.url));(v.sections||[]).forEach(sec=>(sec.points||[]).forEach(p=>{if(p.label==='verified'&&!(p.source&&(cited.has(p.source)||/^https:\/\//.test(p.source))))p.label='hypothesis'}));
+    const src0=j.result.sources||[];const src=src0.length?src0:[...new Map((v.sections||[]).flatMap(s=>(s.points||[]).map(p=>p.source)).concat((v.trends||[]).map(t=>t.source)).filter(u=>/^https:\/\//.test(u||'')).map(u=>[u,{url:u,title:u.replace(/^https:\/\/(www\.)?/,'').split('/')[0]}])).values()];const cited=new Set(src.map(x=>x.url));(v.sections||[]).forEach(sec=>(sec.points||[]).forEach(p=>{if(p.label==='verified'&&!(p.source&&(cited.has(p.source)||/^https:\/\//.test(p.source))))p.label='hypothesis'}));
     c.intel={sections:v.sections,trends:v.trends,sources:src,searches:j.result.searches||0,live:true,at:Date.now()};V.Store.put(c);V.rerender();X.refresh()})};
 
 /* ================= Images: AI product imagery ================= */

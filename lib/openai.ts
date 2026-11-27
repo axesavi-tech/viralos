@@ -48,10 +48,11 @@ export function pickImage(ids: string[], purpose: "generate" | "edit" = "generat
 
 /* ---------- background responses ---------- */
 export async function startResearch(prompt: string, model: string, maxTokens = 12000) {
-  const body: any = { model, input: prompt, tools: [{ type: "web_search" }], background: true, store: true, max_output_tokens: maxTokens };
+  const body: any = { model, input: prompt, tools: [{ type: "web_search" }], include: ["web_search_call.action.sources"], background: true, store: true, max_output_tokens: maxTokens };
   try { return (await call("/responses", { method: "POST", body: JSON.stringify(body) })).id as string; }
   catch (e: any) {
-    if (e.status === 400 && /web_search/.test(e.message)) { body.tools = [{ type: "web_search_preview" }]; return (await call("/responses", { method: "POST", body: JSON.stringify(body) })).id as string; }
+    if (e.status === 400 && /include/.test(e.message)) { delete body.include; return (await call("/responses", { method: "POST", body: JSON.stringify(body) })).id as string; }
+    if (e.status === 400 && /web_search/.test(e.message)) { body.tools = [{ type: "web_search_preview" }]; delete body.include; return (await call("/responses", { method: "POST", body: JSON.stringify(body) })).id as string; }
     throw e;
   }
 }

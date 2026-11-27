@@ -401,6 +401,7 @@ async function autopilot(b,from=0,o={}){if(RUN[b.id]&&RUN[b.id].phase&&RUN[b.id]
   R.phase='insights';R.stage=null;paint();await writeInsights(b);R.phase='done';G(b).built=Date.now();save(b)}
  catch(e){R.phase='error';R.last=errText(e)}paint()}
 /* a change ripples forward: every later stage (and the insights) is re-decided, keeping everything you wrote yourself */
+addEventListener('beforeunload',e=>{if(Object.values(RUN).some(r=>r&&r.phase&&!['done','error'].includes(r.phase))){e.preventDefault();e.returnValue=''}});
 async function recomputeFrom(b,stageKey){const i=Math.max(0,STAGES.findIndex(s=>s.key===stageKey));return autopilot(b,i,{force:true})}
 window.KATHAVI_J={STAGES,ALL_D,SPEC,THEME_IDS,THEME_NAME,G,valOf,fk,show,decided,dById,save,recommend,autopilot,recomputeFrom,researchMarket,writeInsights,RUN,av,dossierText,coerce,genomeText};
 
