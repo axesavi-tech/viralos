@@ -45,7 +45,7 @@ const caps={sample,db,user,assets,downloads,tts};
 window.claude={use:async name=>{try{await me()}catch(e){return null}return caps[name]||null}};
 
 /* ---- helpers for the hosted features ---- */
-async function job(id,onTick){for(let i=0;i<240;i++){const j=await api('/api/jobs/'+id);if(onTick)onTick(j,i);if(j.status==='done'||j.status==='failed'){refresh();return j}await new Promise(r=>setTimeout(r,i<10?4000:8000))}throw{message:'Still processing. Check back in a few minutes.'}}
+async function job(id,onTick){for(let i=0;i<240;i++){let j;try{j=await api('/api/jobs/'+id)}catch(e){/* a hiccup while waiting is not a failure */if(e&&(e.status>=500||!e.status)){await new Promise(r=>setTimeout(r,4000));continue}throw e}if(onTick)onTick(j,i);if(j.status==='done'||j.status==='failed'){refresh();return j}await new Promise(r=>setTimeout(r,i<10?4000:8000))}throw{message:'Still processing. Check back in a few minutes.'}}
 async function fileFromUrl(url,name){const b=await api(url);return new File([b],name||('asset.'+((b.type||'').split('/')[1]||'bin')),{type:b.type})}
 window.VX={api,me,refresh,job,fileFromUrl,uploadBlob:(b,f)=>assets.upload(b,f),get ws(){return WS}};
 window.addEventListener('vx:nocredits',()=>{try{VIRALOS.notify('Not enough credits. Opening Billing…');setTimeout(()=>VIRALOS.go('account'),900)}catch(e){}});
