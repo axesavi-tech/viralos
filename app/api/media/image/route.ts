@@ -3,7 +3,7 @@ import { charge, refund, settings } from "@/lib/credits";
 import { falRun, firstUrl } from "@/lib/fal";
 import { importUrl, toPublicUrl } from "@/lib/storage";
 import { createJob } from "@/lib/jobs";
-import { chain, openaiModelsFor } from "@/lib/engines";
+import { chain, openaiModelsFor, needsWords } from "@/lib/engines";
 import { startImage } from "@/lib/openai";
 export const maxDuration = 300;
 const SIZES: Record<string, any> = { "9:16": { w: 1080, h: 1920, flux: "portrait_16_9", oa: "1024x1536" }, "4:5": { w: 1080, h: 1350, flux: { width: 1080, height: 1350 }, oa: "1024x1536" }, "1:1": { w: 1080, h: 1080, flux: "square_hd", oa: "1024x1024" }, "16:9": { w: 1920, h: 1080, flux: "landscape_16_9", oa: "1536x1024" } };
@@ -17,23 +17,27 @@ export const POST = route(async (req: Request) => {
   const prompt = String(b.prompt || "").slice(0, 3000); if (prompt.length < 8) throw new HttpError(400, "Describe the image you want.");
   const aspect = SIZES[b.aspect] ? b.aspect : "4:5"; const size = SIZES[aspect]; const s = await settings(c);
   const refs: string[] = []; for (const u of (b.refUrls || []).slice(0, 3)) refs.push(await toPublicUrl(c, u, 1800));
-  const ch = await charge(c, "image", 1, { aspect });
-  const fluxReq = { model: s.providers.image_model_text || "fal-ai/flux-pro/v1.1", input: { prompt, image_size: size.flux, num_images: 1, output_format: "png", safety_tolerance: "2" } };
+  // Words inside the image (a poster headline, a menu, a price card) need the premium text engine; everything else uses
+  // the economical engine. The studio says which one up front, so the price is never a surprise.
+  const words = !refs.length && needsWords(prompt, b.needsText);
+  const ch = await charge(c, words ? "image_text" : "image", 1, { aspect, words });
+  const sceneModel = s.providers.image_model_scene || "fal-ai/nano-banana";
+  const fluxReq = { model: sceneModel, input: { prompt: `${prompt} Aspect ratio ${aspect}.`, num_images: 1, output_format: "png", aspect_ratio: aspect } };
   try {
-    const engines = chain(refs.length ? "image_product" : "image");
+    const engines = chain(refs.length ? "image_product" : words ? "image_text" : "image");
     for (const e of engines) {
       try {
         if (e === "fal") {
           const fidelity = refs.length ? " Keep the product in the reference image exactly as it is: same colours, weave, pattern, border, texture and drape. Change only the setting, light and composition." : "";
           const out = refs.length
             ? await falRun(s.providers.image_model_edit || "fal-ai/nano-banana/edit", { prompt: prompt + fidelity + ` Aspect ratio ${aspect}.`, image_urls: refs, num_images: 1, output_format: "png" })
-            : await falRun(fluxReq.model, fluxReq.input);
+            : await falRun(fluxReq.model, fluxReq.input).catch(() => falRun("fal-ai/flux-pro/v1.1", { prompt, image_size: size.flux, num_images: 1, output_format: "png", safety_tolerance: "2" }));
           const url = firstUrl(out); if (!url) throw new Error("The image model returned nothing.");
           const saved = await importUrl(c, url, "image", "image/png");
           const job = await createJob(c, "image", "fal", { prompt, refs: !!refs.length, aspect }, ch.amount, ch.ref, "done", { url: saved.url, path: saved.path });
           return json({ job, url: saved.url, credits: ch.amount, balance: ch.balance, fidelityNote: refs.length ? "Generated from your product photo. Compare side by side before approving." : "" });
         }
-        if (e === "openai" && !refs.length) {
+        if (e === "openai" && !refs.length) { // premium text engine, or backup for scenes
           const m = await openaiModelsFor(s.providers);
           const rid = await startImage(`${prompt}\nFormat: ${aspect} social post image, composed for ${size.w}×${size.h}.`, m.text, m.image, size.oa);
           const job = await createJob(c, "image", "openai", { openai: { id: rid, model: m.image }, prompt, aspect, fallback: fluxReq }, ch.amount, ch.ref, "running");
