@@ -78,7 +78,7 @@ const STAGES=[
   {id:'story',title:'Brand story',sp:'strategist',desc:'The origin and the belief, told so people remember it.',F:[
    {k:'origin',l:'Origin story',t:'text',g:'Built only from what the owner shared; leave gaps as [ask the founder]',dna:'strategic'},
    {k:'manifesto',l:'Manifesto',t:'text',g:'6-8 short lines in the brand voice',dna:'verbal'}]}]},
- {key:'design',n:3,name:'Design',q:'What does the brand look and move like?',out:'Brand DNA and design system',sp:['creative','visual','motion'],tools:[['vault','Brand Vault'],['studio','Creative Studio']],D:[
+ {key:'design',n:3,name:'Design',q:'What does the brand look and move like?',out:'Brand DNA and design system',sp:['creative','visual','motion'],tools:[['vault','Brand Vault'],['studio','Studio']],D:[
   {id:'direction',title:'Creative direction',sp:'creative',desc:'The creative idea that ties every asset together.',F:[
    {k:'idea',l:'Creative idea',t:'text',g:'A big idea or creative territory in one line, plus one sentence on how it shows up',dna:'visual'},
    {k:'moodwords',l:'Mood words',t:'list',g:'5-6 words for the feel',dna:'visual'},
@@ -92,7 +92,7 @@ const STAGES=[
    {k:'themes',l:'Recommended reel themes',t:'themes',g:'2-3 theme ids from the list that fit the brand',dna:'motion'},
    {k:'pacing',l:'Pacing and transitions',t:'text',g:'Rhythm, cut speed, transitions, camera movement',dna:'motion'},
    {k:'sound',l:'Sonic direction',t:'text',g:'Music mood and genres, voice character; licensed music only',dna:'sonic'}]}]},
- {key:'create',n:4,name:'Create',q:'What stories will the brand tell first?',out:'A content library',sp:['content','motion','creative'],tools:[['campaigns','Campaigns'],['calendar','Content Calendar'],['reels','Reel Studio'],['images','Image Studio'],['copy','Copy Studio'],['video','Video Studio'],['voice','Voice Studio']],D:[
+ {key:'create',n:4,name:'Create',q:'What stories will the brand tell first?',out:'A content library',sp:['content','motion','creative'],tools:[['campaigns','Campaigns'],['calendar','Content Calendar'],['reels','Studio · Cinematic reel'],['images','Studio · New photo'],['copy','Copy Studio'],['video','Studio · Voice & subtitles'],['voice','Voice Studio']],D:[
   {id:'pillars',title:'Content pillars',sp:'content',desc:'What the brand posts about, and in what mix.',F:[
    {k:'pillars',l:'Content pillars',t:'list',g:'4-5 pillars: "Pillar — what it covers"',dna:'channel',sync:'dna.pillars'},
    {k:'formats',l:'Format mix',t:'text',g:'Reels, carousels, posts and stories split as shares, with why',dna:'channel'},
