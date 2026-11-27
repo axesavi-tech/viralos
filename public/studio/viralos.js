@@ -443,7 +443,7 @@ VIEWS.video=()=>{const c=camp();if(!brand())return head('Video Studio')+needBran
    ${it.scenes?`<div class="vx-row" style="margin:10px 0"><label class="vx-lab" for="v-len">Reel length</label><input type="number" id="v-len" min="3" max="180" value="${tot}" style="width:90px" aria-label="Reel length in seconds"> <span class="vx-small vx-muted">seconds</span><button class="vx-btn sm" data-act="vlen" type="button">Set length</button>${[6,15,30,60].map(d=>`<button class="vx-btn sm" data-act="vlen" data-d="${d}" type="button">${d}s</button>`).join('')}</div>
    ${it.qa&&it.qa.checks.some(c=>!c.ok&&/Voiceover fits|add up/.test(c.label))?`<div class="vx-note">The script no longer fits ${tot}s. <button class="vx-btn sm" data-act="fitscript" type="button">Rewrite script for ${tot}s · ${rate('fix')} credit</button></div>`:''}`:''}
    <h3>Scenes · ${tot}s</h3>${sc.map((s,i)=>`<div class="vx-scene"><input type="number" min="1" max="30" data-vs="${i}" data-k="t" value="${s.t}" aria-label="Scene ${i+1} seconds"><textarea data-vs="${i}" data-k="on" aria-label="Scene ${i+1} on-screen text">${h(s.on)}</textarea><textarea data-vs="${i}" data-k="vo" aria-label="Scene ${i+1} voiceover">${h(s.vo)}</textarea><button class="vx-btn sm" data-act="regenscene" data-i="${i}" type="button" title="Regenerate this scene (${rate('scene')} credit)">↻</button></div>`).join('')}
-   <div class="vx-row" style="margin-top:10px"><label class="vx-tog"><input type="checkbox" id="v-subs" ${cur.subs!==false?'checked':''} data-act="subs"> Burn in subtitles</label><select data-act="subpos" aria-label="Subtitle position" style="width:auto">${[['upper','Upper'],['middle','Middle'],['lower','Lower']].map(([k,l])=>`<option value="${k}" ${(cur.subPos||'middle')===k?'selected':''}>${l}</option>`).join('')}</select>
+   <div class="vx-row" style="margin-top:10px"><label class="vx-tog"><input type="checkbox" id="v-subs" ${subsOn(it)?'checked':''} data-act="subs"> Burn in subtitles</label><select data-act="subpos" aria-label="Subtitle position" style="width:auto">${[['upper','Upper'],['middle','Middle'],['lower','Lower']].map(([k,l])=>`<option value="${k}" ${(cur.subPos||'lower')===k?'selected':''}>${l}</option>`).join('')}</select>
    <label class="vx-btn sm" for="v-voice">${voice?'Replace voiceover':'Add your voiceover'}<input type="file" id="v-voice" accept="audio/*" hidden></label>${voice?chip('Voice: '+voice.name,'ok'):chip('No voiceover','warn')}</div>
    <p class="vx-small vx-muted">Record yourself reading the script (see Voice Studio for a teleprompter) and upload it. Product media comes from the Brand Vault.</p></div></div>
   <div><div class="vx-card"><div class="vx-phone"><canvas id="vCv" width="540" height="960" aria-label="Reel preview"></canvas></div>
@@ -453,15 +453,32 @@ function setLength(it,L){const sc=it.scenes,tot=sc.reduce((a,s)=>a+(+s.t||0),0)|
   for(let k=sc.length-1,d=diff;d!==0&&k>=0;k=(k-1+sc.length)%sc.length){if(k===0&&sc.length>1){k=sc.length;continue}const step=d>0?1:-1;if(sc[k].t+step>=1){sc[k].t+=step;d-=step}else if(sc.every((x,j)=>j===0||x.t<=1))break}
   it.duration=sc.reduce((a,s)=>a+s.t,0);runQA(it);Store.put(it)}
 function vidScenes(it){if(it.format==='story')return(it.frames||[]).map(f=>({t:+f.t||5,on:f.text,vo:'',visual:f.text}));return(it.scenes||[]).map(s=>({t:+s.t||3,on:s.on_screen,vo:s.voiceover,ai_prompt:s.ai_prompt,visual:s.visual}))}
-function drawSubs(g,text,W,H){const pos=cur.subPos||'middle';if(!text)return;g.save();g.font='600 44px Manrope, sans-serif';const ws=String(text).split(/\s+/),lines=[];let l='';for(const w of ws){const t=l?l+' '+w:w;if(g.measureText(t).width>W-200&&l){lines.push(l);l=w}else l=t}if(l)lines.push(l);
-  const L=lines.slice(-3),lh=56,bh=L.length*lh+28,y=pos==='upper'?300:pos==='lower'?H-300-bh:Math.round(H*.64-bh/2);g.fillStyle='rgba(0,0,0,.62)';const bw=Math.min(W-120,Math.max(...L.map(x=>g.measureText(x).width))+60);g.beginPath();g.roundRect?g.roundRect((W-bw)/2,y,bw,bh,18):g.rect((W-bw)/2,y,bw,bh);g.fill();
-  g.fillStyle='#fff';g.textAlign='center';g.textBaseline='top';L.forEach((x,i)=>g.fillText(x,W/2,y+14+i*lh));g.restore()}
-function drawVideoFrame(g,tpl,sc,tg,k,subs){const W=1080,H=1920;let acc=0,i=0;for(;i<sc.length-1;i++){if(tg<acc+sc[i].t)break;acc+=sc[i].t}const s=sc[i],tl=Math.max(0,tg-acc);
-  const tt=s.t<=tpl.dur?Math.min(tl,tpl.dur-.01):tl*(tpl.dur-.01)/s.t;const M=state.media.slice(),n=M.length;
-  if(n)state.media=M.slice(i%n).concat(M.slice(0,i%n));try{withCopy({headline:s.on||' ',sub:''},()=>renderTpl(g,tpl,tt,k))}finally{state.media=M}
-  g.setTransform(k,0,0,k,0,0);if(subs)drawSubs(g,s.vo,W,H);g.setTransform(1,0,0,1,0,0)}
+/* Subtitles in the style of the best caption tools: brand type, no grey box, two lines at most, the spoken word lit up,
+   placed low in the safe area so they never sit on the product. Skipped when they would repeat the on-screen line. */
+const norm=x=>String(x||'').toLowerCase().replace(/[^a-z0-9ऀ-ൿ ]/g,'').replace(/\s+/g,' ').trim();
+function drawSubs(g,text,W,H,p=0,on=''){if(!text)return;const a=norm(text),b=norm(on);if(b&&(a===b||a.includes(b)&&b.length>a.length*.6))return;
+  const pos=cur.subPos||'lower',fs=50,lh=64;g.save();g.font=`700 ${fs}px Manrope, "Inter Tight", sans-serif`;g.textBaseline='alphabetic';
+  const words=String(text).split(/\s+/).filter(Boolean);const lit=Math.min(words.length-1,Math.floor(p*words.length));
+  /* show the current phrase only: at most two lines that contain the word being spoken */
+  const lines=[];let l=[];for(const w of words){const t=[...l,w].join(' ');if(g.measureText(t).width>W-220&&l.length){lines.push(l);l=[w]}else l.push(w)}if(l.length)lines.push(l);
+  let idx=0,acc=0;for(;idx<lines.length;idx++){if(lit<acc+lines[idx].length)break;acc+=lines[idx].length}const start=Math.max(0,idx-(idx%2)),L=lines.slice(start,start+2);let off=lines.slice(0,start).reduce((n,x)=>n+x.length,0);
+  const y0=pos==='upper'?360:pos==='middle'?Math.round(H*.58):H-470-(L.length-1)*lh;
+  L.forEach((ln,r)=>{const full=ln.join(' ');let x=W/2-g.measureText(full).width/2;const y=y0+r*lh;
+    ln.forEach((w,k)=>{const on=off+k===lit,ww=g.measureText(w+' ').width;
+      /* a dark outline keeps white words readable on light and dark footage alike */
+      g.lineJoin='round';g.lineWidth=10;g.strokeStyle='rgba(0,0,0,.82)';g.shadowColor='rgba(0,0,0,.35)';g.shadowBlur=12;g.strokeText(w,x,y);g.shadowBlur=0;
+      g.fillStyle=on?'#FFE45C':'#FFFFFF';g.fillText(w,x,y);x+=ww});off+=ln.length});
+  g.restore()}
+function drawVideoFrame(g,tpl,sc,tg,k,subs,it){const W=1080,H=1920;let acc=0,i=0;for(;i<sc.length-1;i++){if(tg<acc+sc[i].t)break;acc+=sc[i].t}const s=sc[i],tl=Math.max(0,tg-acc);
+  /* play the template's entrance once, then hold its settled frame: stretching it over a long scene left text half-typed */
+  const tt=Math.min(tl,tpl.dur*.9);const M=state.media.slice(),n=M.length;
+  const base=it?copyFor(it):{};const b=brand();const lab=base.label&&base.label.length<=30?base.label:(b?.name||'');
+  if(n)state.media=M.slice(i%n).concat(M.slice(0,i%n));try{withCopy({...base,label:lab,headline:s.on||base.headline||' ',sub:''},()=>renderTpl(g,tpl,tt,k))}finally{state.media=M}
+  g.setTransform(k,0,0,k,0,0);if(subs)drawSubs(g,s.vo,W,H,s.t?tl/s.t:0,s.on);g.setTransform(1,0,0,1,0,0)}
+/* subtitles default to on only when a voiceover is attached; the owner can switch them either way */
+function subsOn(it){return cur.subs===true||(cur.subs!==false&&!!(it&&Session.voices.get(it.id)))}
 let vPrev=null;function previewLoop(){const cv=q('#vCv');if(!cv||cur.view!=='video'){vPrev=null;return}const it=Store.get(cur.vid);if(!it){vPrev=null;return}const sc=vidScenes(it),tot=sc.reduce((a,s)=>a+s.t,0)||1,tpl=tplFor(it);
-  const t=((performance.now()/1000)%tot);try{drawVideoFrame(cv.getContext('2d'),tpl,sc,t,cv.width/1080,cur.subs!==false)}catch(e){}vPrev=requestAnimationFrame(previewLoop)}
+  const t=((performance.now()/1000)%tot);try{drawVideoFrame(cv.getContext('2d'),tpl,sc,t,cv.width/1080,subsOn(it),it)}catch(e){}vPrev=requestAnimationFrame(previewLoop)}
 async function renderVideo(it){const tpl=tplFor(it),sc=vidScenes(it),tot=sc.reduce((a,s)=>a+s.t,0),st=q('#vSt');
   const cv=document.createElement('canvas');cv.width=1080;cv.height=1920;const g=cv.getContext('2d');
   if(!cv.captureStream||!window.MediaRecorder){st.textContent='This browser cannot record video. Use Chrome, Edge or Safari 17+ on a computer.';return}
@@ -470,8 +487,8 @@ async function renderVideo(it){const tpl=tplFor(it),sc=vidScenes(it),tot=sc.redu
   const types=['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9,opus','video/webm'];const mime=types.find(t=>MediaRecorder.isTypeSupported(t))||'';const ext=mime.includes('mp4')?'mp4':'webm';
   const rec=new MediaRecorder(stream,{mimeType:mime||undefined,videoBitsPerSecond:12e6});const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);const done=new Promise(r=>rec.onstop=r);
   state.media.forEach(m=>{if(m.type==='video'){try{m.el.currentTime=0;m.el.play()}catch(e){}}});
-  drawVideoFrame(g,tpl,sc,0,1,cur.subs!==false);rec.start(250);if(src)src.start();const t0=performance.now();
-  await new Promise(res=>{const step=()=>{const t=(performance.now()-t0)/1000;if(t>=tot){res();return}drawVideoFrame(g,tpl,sc,t,1,cur.subs!==false);st.textContent=`Recording ${t.toFixed(0)} / ${tot}s · keep this tab open`;requestAnimationFrame(step)};step()});
+  drawVideoFrame(g,tpl,sc,0,1,subsOn(it),it);rec.start(250);if(src)src.start();const t0=performance.now();
+  await new Promise(res=>{const step=()=>{const t=(performance.now()-t0)/1000;if(t>=tot){res();return}drawVideoFrame(g,tpl,sc,t,1,subsOn(it),it);st.textContent=`Recording ${t.toFixed(0)} / ${tot}s · keep this tab open`;requestAnimationFrame(step)};step()});
   const recSec=(performance.now()-t0)/1000;rec.stop();if(src)try{src.stop()}catch(e){};await done;if(actx)actx.close();stream.getTracks().forEach(t=>t.stop());
   const blob=new Blob(chunks,{type:mime||'video/webm'}),url=URL.createObjectURL(blob),name=`day${String(it.n).padStart(2,'0')}-${it.format}.${ext}`;
   const meta=await new Promise(r=>{const v=document.createElement('video');v.preload='metadata';v.muted=true;v.onloadedmetadata=()=>r({w:v.videoWidth,h:v.videoHeight,d:v.duration});v.onerror=()=>r({});v.src=url;setTimeout(()=>r({}),4000)});
