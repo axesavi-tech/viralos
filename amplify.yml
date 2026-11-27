@@ -9,7 +9,7 @@ frontend:
       commands:
         # Amplify does not pass console environment variables to the running server by default;
         # write the ones Kathavi needs into .env.production at build time.
-        - env | grep -E '^(NEXT_PUBLIC_|ANTHROPIC_|GEMINI_|FAL_|RUNWAYML_|ELEVENLABS_|RAZORPAY_|STRIPE_|META_|SHOPIFY_|VX_)' >> .env.production || true
+        - env | grep -E '^(NEXT_PUBLIC_|ANTHROPIC_|OPENAI_|GEMINI_|FAL_|RUNWAYML_|ELEVENLABS_|RAZORPAY_|STRIPE_|META_|SHOPIFY_|VX_|AI_TIMEOUT_MS|SUPABASE_JWT_SECRET)' >> .env.production || true
         - npm run build
   artifacts:
     baseDirectory: .next
